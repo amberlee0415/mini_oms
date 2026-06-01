@@ -581,6 +581,135 @@ Explain how data flows from UI → service → API → backend → response → 
 
 ---
 
+## Prompt 7 - Order CRUD API Implementation
+
+### Date: 2026-06-01
+
+**Context:** Implement Order CRUD API with strong business logic, product validation, price integrity enforcement, and backend calculation of totals.
+
+**Prompt:**
+```
+Act as a Senior Full-stack Engineer.
+
+We are continuing an existing monorepo project.
+
+IMPORTANT CONTEXT:
+- docs/plan.md already exists
+- docs/design.md already exists
+- docs/prompts.md already exists
+- You MUST ONLY update these files (never create new markdown/documentation files)
+
+STRICT RULE:
+- Do NOT create any new .md files under any circumstances
+- Do NOT introduce new architecture layers beyond existing backend structure
+- Only implement Order feature within existing backend system
+
+TASK: Implement Order CRUD API
+
+We already have:
+- Express backend architecture (routes, controllers, services)
+- JSON storage helper (readJson, writeJson)
+- products.json and orders.json exist
+
+ORDER STRUCTURE:
+{
+  id,
+  customerName,
+  date,
+  status,
+  totalAmount,
+  orderItems: []
+}
+
+ORDER ITEM STRUCTURE:
+{
+  productId,
+  productName,
+  unitPrice,
+  quantity,
+  subtotal
+}
+
+REQUIREMENTS:
+
+1. API Endpoints:
+- GET /orders
+- GET /orders/:id
+- POST /orders
+- PUT /orders/:id
+- DELETE /orders/:id
+
+2. Business Rules (VERY IMPORTANT):
+- totalAmount MUST be calculated on backend before saving
+- orderItems subtotal = unitPrice * quantity
+- totalAmount = sum of all orderItems subtotal
+
+3. Data Integrity Rules:
+- productId must reference existing product in products.json
+- productName and unitPrice must be fetched from product data (do NOT trust frontend)
+- If product does not exist → return error
+
+4. Architecture Rules:
+- Controllers handle only request/response
+- Business logic MUST be in services layer
+- JSON storage helper MUST be used for all persistence
+- No direct file system access in controllers
+
+5. Validation Rules:
+- customerName is required
+- orderItems must not be empty
+- quantity must be > 0
+- status must be valid (define reasonable defaults if needed)
+
+6. Calculation Rules:
+- Recalculate ALL totals in backend before saving
+- Never trust frontend-calculated totals
+
+DOCUMENTATION UPDATE REQUIREMENTS:
+
+### docs/plan.md
+- Mark Order CRUD backend implementation as completed
+- Add step describing order system implementation and total calculation logic
+
+### docs/design.md
+- Document Order module architecture
+- Explain orderItems structure and calculation flow
+- Explain how product data is used to enforce pricing integrity
+- Show backend flow: controller → service → product validation → calculation → JSON storage
+
+### docs/prompts.md
+- Append this prompt as:
+  "Prompt 7 - Order CRUD API Implementation"
+
+FINAL RULES:
+- Do NOT create any new documentation files
+- Do NOT modify frontend in this step
+- Only implement backend order feature
+- Ensure strong data consistency between products and orders
+
+Finally:
+Explain how order creation flow works step-by-step including validation, product lookup, calculation, and persistence.
+```
+
+**Result:** Successfully implemented Order CRUD API with:
+- **Routes:** order.routes.js with 5 endpoints (GET, POST, PUT, DELETE)
+- **Controller:** order.controller.js with 5 functions (request/response handling only)
+- **Service:** order.service.js with comprehensive business logic:
+  - `validateAndEnrichOrderItems()` - Validates productId, fetches product data, calculates subtotals
+  - `calculateTotalAmount()` - Sums all subtotals for total
+  - Product validation against products.json
+  - Price integrity enforcement (fetches unitPrice from product, never trusts frontend)
+  - Calculation logic (subtotal = unitPrice × quantity, totalAmount = sum of subtotals)
+- **CRUD Operations:** Create, Read, Update, Delete all functional
+- **Validation:** customerName required, orderItems not empty, quantity > 0, productId must exist
+- **Data Integrity:** Orders can only reference existing products, prevents orphaned items
+- **Business Rules:** All calculations done on backend before saving
+- **Error Handling:** Clear error messages for product not found, invalid quantity, empty items
+- **Registered:** Order routes in main router (routes/index.js)
+- **Updated Documentation:** plan.md (marked Order backend complete with business rules), design.md (added Order Module Architecture with step-by-step creation flow, price integrity explanation, calculation logic, error scenarios), prompts.md (this entry)
+
+---
+
 ## Future Prompts
 
 Document additional prompts here as development continues. Include:

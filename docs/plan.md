@@ -77,18 +77,25 @@ Mini OMS (Order Management System) - A modern monorepo application for managing 
 ---
 
 ## Phase 3: Order Management
-**Status:** Pending
+**Status:** Backend Complete ✅ | Frontend Pending
 
-### Backend Tasks
-- [ ] Create Order model/schema
-- [ ] Implement GET /api/orders (list all)
-- [ ] Implement GET /api/orders/:id (get single)
-- [ ] Implement POST /api/orders (create)
-- [ ] Implement PUT /api/orders/:id (update)
-- [ ] Implement DELETE /api/orders/:id (delete)
-- [ ] Add order-product relationship handling
-- [ ] Add input validation
-- [ ] Add error handling
+### Backend Tasks ✅
+- [x] **Order CRUD API Implementation** - Complete REST API with business logic:
+  - Routes: order.routes.js (GET, POST, PUT, DELETE endpoints)
+  - Controller: order.controller.js (request/response handling)
+  - Service: order.service.js (business logic, validation, calculations)
+  - GET /api/orders (list all orders)
+  - GET /api/orders/:id (get single order)
+  - POST /api/orders (create order with validation and calculation)
+  - PUT /api/orders/:id (update order with recalculation)
+  - DELETE /api/orders/:id (delete order)
+  - **Product Integration:** Validates productId against products.json
+  - **Price Integrity:** Fetches unitPrice from product data (not frontend)
+  - **Calculation Logic:** Backend calculates subtotal and totalAmount
+  - **Data Validation:** customerName required, orderItems not empty, quantity > 0
+  - **Business Rules:** totalAmount = sum of (unitPrice × quantity) for all items
+  - Uses JSON storage helper (readJson/writeJson)
+  - Error handling with AppError
 
 ### Frontend Tasks
 - [ ] Create Order list component

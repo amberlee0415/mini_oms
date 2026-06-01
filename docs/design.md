@@ -176,15 +176,108 @@ mini_oms/
 }
 ```
 
-### Order Endpoints
+### Order Endpoints (Implemented ✅)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | /api/orders | Get all orders |
-| GET | /api/orders/:id | Get order by ID |
-| POST | /api/orders | Create new order |
-| PUT | /api/orders/:id | Update order |
-| DELETE | /api/orders/:id | Delete order |
+| Method | Endpoint | Description | Request Body | Response |
+|--------|----------|-------------|--------------|----------|
+| GET | /api/orders | Get all orders | - | `{ status, data: [...] }` |
+| GET | /api/orders/:id | Get order by ID | - | `{ status, data: {...} }` |
+| POST | /api/orders | Create new order | `{ customerName, orderItems: [...] }` | `{ status, data: {...} }` |
+| PUT | /api/orders/:id | Update order | `{ customerName?, status?, orderItems?: [...] }` | `{ status, data: {...} }` |
+| DELETE | /api/orders/:id | Delete order | - | `{ status, message }` |
+
+**Order Data Structure:**
+```javascript
+{
+  id: "uuid",                    // Auto-generated
+  customerName: "string",        // Required
+  date: "ISO 8601",              // Auto-generated
+  status: "pending|completed",   // Default: "pending"
+  orderItems: [                  // Required, not empty
+    {
+      productId: "uuid",         // Must exist in products.json
+      productName: "string",     // Fetched from product
+      unitPrice: number,         // Fetched from product (price integrity)
+      quantity: number,          // From request, must be > 0
+      subtotal: number           // Calculated: unitPrice × quantity
+    }
+  ],
+  totalAmount: number,           // Calculated: sum of all subtotals
+  createdAt: "ISO 8601",         // Auto-generated
+  updatedAt: "ISO 8601"          // Auto-updated
+}
+```
+
+**Business Rules:**
+- **Product Validation:** Each `productId` must exist in `products.json`
+- **Price Integrity:** `unitPrice` and `productName` fetched from product data (never trust frontend)
+- **Calculation Logic:**
+  - `subtotal = unitPrice × quantity` (per item)
+  - `totalAmount = sum of all subtotals`
+  - All calculations done on backend before saving
+- **Data Validation:**
+  - `customerName`: Required, non-empty
+  - `orderItems`: Required, must contain at least one item
+  - `quantity`: Must be number > 0
+
+**Error Responses:**
+```javascript
+{
+  status: "error",
+  statusCode: 400|404|500,
+  message: "Error description"
+}
+```
+
+**Example Request (Create Order):**
+```javascript
+POST /api/orders
+{
+  "customerName": "John Doe",
+  "orderItems": [
+    {
+      "productId": "product-uuid-1",
+      "quantity": 2
+    },
+    {
+      "productId": "product-uuid-2",
+      "quantity": 1
+    }
+  ]
+}
+```
+
+**Example Response:**
+```javascript
+{
+  "status": "success",
+  "data": {
+    "id": "order-uuid",
+    "customerName": "John Doe",
+    "date": "2026-06-01T01:49:00.000Z",
+    "status": "pending",
+    "orderItems": [
+      {
+        "productId": "product-uuid-1",
+        "productName": "Laptop",      // Fetched from product
+        "unitPrice": 1200,             // Fetched from product
+        "quantity": 2,
+        "subtotal": 2400               // Calculated: 1200 × 2
+      },
+      {
+        "productId": "product-uuid-2",
+        "productName": "Mouse",        // Fetched from product
+        "unitPrice": 25,               // Fetched from product
+        "quantity": 1,
+        "subtotal": 25                 // Calculated: 25 × 1
+      }
+    ],
+    "totalAmount": 2425,               // Calculated: 2400 + 25
+    "createdAt": "2026-06-01T01:49:00.000Z",
+    "updatedAt": "2026-06-01T01:49:00.000Z"
+  }
+}
+```
 
 ### Health Check
 
@@ -898,6 +991,317 @@ src/
    - `fileStorage.js` used by all modules
    - `AppError` used for all errors
    - Same pattern for products and orders
+
+---
+
+## Order Module Architecture (Implemented)
+
+### File Structure
+```
+src/
+├── routes/
+│   └── order.routes.js        # Route definitions
+├── controllers/
+│   └── order.controller.js    # Request/response handlers
+├── services/
+│   └── order.service.js       # Business logic & calculations
+└── database/
+    └── fileStorage.js         # JSON storage (shared)
+```
+
+### Layer Responsibilities
+
+#### Routes Layer (`order.routes.js`)
+- Defines 5 endpoints: GET /, GET /:id, POST /, PUT /:id, DELETE /:id
+- Maps HTTP methods to controller functions
+- No business logic - pure routing
+
+#### Controller Layer (`order.controller.js`)
+**Functions:**
+- `getOrders()` - Handle GET /api/orders
+- `getOrder()` - Handle GET /api/orders/:id
+- `createOrder()` - Handle POST /api/orders
+- `updateOrder()` - Handle PUT /api/orders/:id
+- `deleteOrder()` - Handle DELETE /api/orders/:id
+
+**Responsibilities:**
+- Extract data from `req.params`, `req.body`
+- Call corresponding service function
+- Format response: `{ status: 'success', data: ... }`
+- Pass errors to error handler via `next(error)`
+- **No business logic** - delegates to service layer
+
+#### Service Layer (`order.service.js`)
+**Functions:**
+- `getAllOrders()` - Retrieve all orders
+- `getOrderById(id)` - Find order by ID
+- `createOrder(data)` - Create with validation and calculation
+- `updateOrder(id, updates)` - Update with recalculation
+- `deleteOrder(id)` - Delete order
+- `validateAndEnrichOrderItems(items)` - **Key function** for product validation
+- `calculateTotalAmount(items)` - Calculate total from items
+
+**Responsibilities:**
+- **Product Validation:** Verify each `productId` exists in products.json
+- **Price Integrity:** Fetch `unitPrice` and `productName` from product data
+- **Calculation Logic:** Calculate `subtotal` and `totalAmount` on backend
+- **Data Validation:** Check customerName, orderItems, quantity
+- **Error Handling:** Throw `AppError` for validation failures
+- **No HTTP concerns** - pure business logic
+
+#### Database Layer (`fileStorage.js`)
+- Shared helper used by order service
+- `readJson('orders.json')` - Read orders array
+- `readJson('products.json')` - Read products for validation
+- `writeJson('orders.json', data)` - Save orders array
+- Handles all file errors gracefully
+
+### Order Creation Flow (Step-by-Step)
+
+```
+1. Client Request
+   POST /api/orders
+   Body: {
+     "customerName": "John Doe",
+     "orderItems": [
+       { "productId": "prod-1", "quantity": 2 },
+       { "productId": "prod-2", "quantity": 1 }
+     ]
+   }
+   ↓
+
+2. Express Middleware Stack
+   ├── CORS ✓
+   ├── JSON Parser ✓
+   └── Request Logger ✓
+   ↓
+
+3. Routes Layer (order.routes.js)
+   Match: POST / → createOrder controller
+   ↓
+
+4. Controller Layer (order.controller.js)
+   ├── Extract: req.body = { customerName, orderItems }
+   ├── Call: orderService.createOrder(req.body)
+   └── Wait for response...
+   ↓
+
+5. Service Layer (order.service.js)
+   Step 1: Validate customerName
+   ├── Check: customerName.trim() !== '' ✓
+   └── Result: Valid
+   
+   Step 2: Validate and Enrich Order Items
+   ├── Call: validateAndEnrichOrderItems(orderItems)
+   │   ↓
+   │   For each item in orderItems:
+   │   ├── Validate quantity > 0 ✓
+   │   ├── Validate productId exists ✓
+   │   ├── Call: readJson('products.json')
+   │   ├── Find product by productId
+   │   │   ├── If not found → throw AppError('Product not found', 404)
+   │   │   └── If found → continue
+   │   ├── Fetch productName from product ✓
+   │   ├── Fetch unitPrice from product ✓ (PRICE INTEGRITY)
+   │   ├── Calculate subtotal = unitPrice × quantity
+   │   └── Return enriched item: {
+   │         productId,
+   │         productName,    // From product data
+   │         unitPrice,      // From product data
+   │         quantity,       // From request
+   │         subtotal        // Calculated
+   │       }
+   │   ↓
+   └── Result: enrichedItems = [
+         { productId: "prod-1", productName: "Laptop", unitPrice: 1200, quantity: 2, subtotal: 2400 },
+         { productId: "prod-2", productName: "Mouse", unitPrice: 25, quantity: 1, subtotal: 25 }
+       ]
+   
+   Step 3: Calculate Total Amount
+   ├── Call: calculateTotalAmount(enrichedItems)
+   ├── Logic: sum of all subtotals
+   ├── Calculation: 2400 + 25 = 2425
+   └── Result: totalAmount = 2425
+   
+   Step 4: Create Order Object
+   newOrder = {
+     id: randomUUID(),
+     customerName: "John Doe",
+     date: "2026-06-01T01:49:00.000Z",
+     status: "pending",
+     orderItems: enrichedItems,
+     totalAmount: 2425,        // Backend-calculated
+     createdAt: "2026-06-01T01:49:00.000Z",
+     updatedAt: "2026-06-01T01:49:00.000Z"
+   }
+   
+   Step 5: Save to Database
+   ├── Call: readJson('orders.json')
+   ├── Add newOrder to array
+   ├── Call: writeJson('orders.json', updatedArray)
+   └── Return: newOrder
+   ↓
+
+6. Database Layer (fileStorage.js)
+   ├── readJson('products.json') → validate products exist
+   ├── readJson('orders.json') → get existing orders
+   └── writeJson('orders.json', [...orders, newOrder]) → save
+   ↓
+
+7. Controller Formats Response
+   res.status(201).json({
+     status: 'success',
+     data: newOrder
+   })
+   ↓
+
+8. Response Sent to Client
+   {
+     "status": "success",
+     "data": {
+       "id": "order-uuid",
+       "customerName": "John Doe",
+       "date": "2026-06-01T01:49:00.000Z",
+       "status": "pending",
+       "orderItems": [
+         {
+           "productId": "prod-1",
+           "productName": "Laptop",
+           "unitPrice": 1200,
+           "quantity": 2,
+           "subtotal": 2400
+         },
+         {
+           "productId": "prod-2",
+           "productName": "Mouse",
+           "unitPrice": 25,
+           "quantity": 1,
+           "subtotal": 25
+         }
+       ],
+       "totalAmount": 2425,
+       "createdAt": "2026-06-01T01:49:00.000Z",
+       "updatedAt": "2026-06-01T01:49:00.000Z"
+     }
+   }
+```
+
+### Price Integrity Enforcement
+
+**Problem:** Frontend could send fake prices to manipulate order totals
+
+**Solution:** Backend fetches prices from products.json
+
+```javascript
+// ❌ WRONG - Trusting frontend data
+const item = {
+  productId: req.body.productId,
+  unitPrice: req.body.unitPrice,  // Could be manipulated!
+  quantity: req.body.quantity
+};
+
+// ✅ CORRECT - Fetching from product data
+const product = products.find(p => p.id === item.productId);
+const item = {
+  productId: product.id,
+  productName: product.name,      // From database
+  unitPrice: product.price,       // From database (trusted)
+  quantity: req.body.quantity,
+  subtotal: product.price * req.body.quantity  // Calculated with trusted price
+};
+```
+
+### Calculation Logic
+
+**Subtotal Calculation (Per Item):**
+```javascript
+subtotal = unitPrice × quantity
+```
+
+**Total Amount Calculation:**
+```javascript
+totalAmount = orderItems.reduce((sum, item) => sum + item.subtotal, 0)
+```
+
+**Example:**
+```
+Order Items:
+- Laptop: $1200 × 2 = $2400
+- Mouse: $25 × 1 = $25
+
+Total Amount: $2400 + $25 = $2425
+```
+
+### Data Validation Rules
+
+1. **Customer Name:** Required, non-empty string
+2. **Order Items:** Must be array with at least one item
+3. **Product ID:** Must exist in products.json
+4. **Quantity:** Must be number > 0
+5. **Status:** Defaults to "pending" if not provided
+
+### Error Scenarios
+
+**Scenario 1: Product Not Found**
+```
+Request: { productId: "invalid-id", quantity: 2 }
+↓
+Service validates productId against products.json
+↓
+Product not found
+↓
+throw new AppError('Product with ID invalid-id not found', 404)
+↓
+Response: { status: 'error', statusCode: 404, message: '...' }
+```
+
+**Scenario 2: Invalid Quantity**
+```
+Request: { productId: "valid-id", quantity: 0 }
+↓
+Service validates quantity > 0
+↓
+Validation fails
+↓
+throw new AppError('Each item must have a valid quantity greater than 0', 400)
+↓
+Response: { status: 'error', statusCode: 400, message: '...' }
+```
+
+**Scenario 3: Empty Order Items**
+```
+Request: { customerName: "John", orderItems: [] }
+↓
+Service validates orderItems.length > 0
+↓
+Validation fails
+↓
+throw new AppError('Order must contain at least one item', 400)
+↓
+Response: { status: 'error', statusCode: 400, message: '...' }
+```
+
+### Key Design Principles
+
+1. **Never Trust Frontend Data**
+   - Prices fetched from products.json
+   - Totals calculated on backend
+   - Product names fetched from database
+
+2. **Data Integrity**
+   - Product validation ensures referential integrity
+   - Orders can only reference existing products
+   - Prevents orphaned order items
+
+3. **Calculation Consistency**
+   - All calculations in one place (service layer)
+   - Same logic for create and update
+   - Recalculates totals when items change
+
+4. **Error Handling**
+   - Clear error messages
+   - Proper HTTP status codes
+   - Validation before database operations
 
 ---
 
