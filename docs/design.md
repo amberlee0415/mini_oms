@@ -79,7 +79,13 @@ mini_oms/
 │   │
 │   └── backend/           # Express API
 │       ├── src/
-│       │   └── server.js  # Server entry point
+│       │   ├── routes/           # Route definitions
+│       │   ├── controllers/      # Request handlers
+│       │   ├── services/         # Business logic
+│       │   ├── middleware/       # Custom middleware
+│       │   ├── utils/            # Utility functions
+│       │   ├── database/         # Data access layer
+│       │   └── server.js         # Server entry point
 │       └── package.json
 │
 ├── data/                  # JSON storage
@@ -193,33 +199,127 @@ src/
 
 ## Backend Architecture
 
-### Folder Structure (Planned)
+### Folder Structure (Implemented)
 ```
 src/
-├── routes/
-│   ├── products.js
-│   └── orders.js
+├── routes/              # Route definitions
+│   ├── index.js         # Main router (aggregates all routes)
+│   └── health.routes.js # Health check routes
 │
-├── controllers/
-│   ├── productController.js
-│   └── orderController.js
+├── controllers/         # Request handlers
+│   └── health.controller.js
 │
-├── services/
-│   ├── productService.js
-│   └── orderService.js
+├── services/            # Business logic layer
+│   └── health.service.js
 │
-├── utils/
-│   ├── fileStorage.js
-│   └── validation.js
+├── middleware/          # Custom middleware
+│   ├── errorHandler.js  # Global error handler
+│   ├── notFound.js      # 404 handler
+│   └── logger.js        # Request logger
 │
-└── server.js
+├── utils/               # Utility functions
+│   ├── asyncHandler.js  # Async error wrapper
+│   └── AppError.js      # Custom error class
+│
+├── database/            # Data access layer
+│   └── fileStorage.js   # JSON file read/write helpers
+│
+└── server.js            # Application entry point
 ```
 
-### Middleware Stack
-1. CORS
-2. JSON body parser
-3. Route handlers
-4. Error handler
+### Layer Responsibilities
+
+#### 1. Routes Layer (`routes/`)
+**Responsibility:** Define API endpoints and map them to controllers
+- Register HTTP methods (GET, POST, PUT, DELETE)
+- Group related endpoints
+- Apply route-specific middleware
+- **Example:** `GET /api/health` → `health.controller.js`
+
+#### 2. Controllers Layer (`controllers/`)
+**Responsibility:** Handle HTTP requests and responses
+- Extract data from request (params, query, body)
+- Call appropriate service methods
+- Format and send responses
+- Handle errors with try-catch
+- **Example:** `getHealthStatus()` extracts nothing, calls service, returns JSON
+
+#### 3. Services Layer (`services/`)
+**Responsibility:** Contain business logic
+- Implement core application logic
+- Perform data validation
+- Orchestrate database operations
+- Return data or throw errors
+- **Example:** `checkHealth()` returns system status object
+
+#### 4. Middleware Layer (`middleware/`)
+**Responsibility:** Process requests before/after route handlers
+- **logger.js:** Log incoming requests
+- **errorHandler.js:** Catch and format errors
+- **notFound.js:** Handle 404 errors
+- Applied globally or per-route
+
+#### 5. Utils Layer (`utils/`)
+**Responsibility:** Provide reusable helper functions
+- **asyncHandler.js:** Wrap async functions to catch errors
+- **AppError.js:** Custom error class with status codes
+- Pure functions with no side effects
+
+#### 6. Database Layer (`database/`)
+**Responsibility:** Abstract data storage operations
+- **fileStorage.js:** Read/write JSON files
+- Provides `readData()` and `writeData()` methods
+- Handles file system errors
+- Future: Replace with database ORM
+
+### Request Flow
+
+```
+1. Client Request
+   ↓
+2. Express App (server.js)
+   ↓
+3. Middleware Stack
+   ├── CORS
+   ├── JSON Parser
+   └── Request Logger
+   ↓
+4. Routes Layer (routes/index.js)
+   ├── Match URL pattern
+   └── Route to specific handler
+   ↓
+5. Controller Layer (controllers/*.controller.js)
+   ├── Extract request data
+   ├── Validate input (basic)
+   └── Call service method
+   ↓
+6. Service Layer (services/*.service.js)
+   ├── Execute business logic
+   ├── Call database layer if needed
+   └── Return data or throw error
+   ↓
+7. Database Layer (database/fileStorage.js)
+   ├── Read/write JSON files
+   └── Return data
+   ↓
+8. Response Flow (back up the chain)
+   ├── Service returns data to controller
+   ├── Controller formats response
+   └── Send JSON response to client
+   ↓
+9. Error Handling (if error occurs)
+   ├── Error caught by asyncHandler or try-catch
+   ├── Passed to errorHandler middleware
+   └── Formatted error response sent to client
+```
+
+### Middleware Stack (Execution Order)
+1. **CORS** - Enable cross-origin requests
+2. **JSON Parser** - Parse request body
+3. **Request Logger** - Log incoming requests
+4. **Routes** - Match and execute route handlers
+5. **Not Found** - Catch unmatched routes (404)
+6. **Error Handler** - Catch and format all errors
 
 ---
 

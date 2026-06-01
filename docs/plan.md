@@ -16,6 +16,14 @@ Mini OMS (Order Management System) - A modern monorepo application for managing 
 - [x] Configure concurrent development scripts
 - [x] Create data storage structure
 - [x] Set up documentation framework
+- [x] **Backend Architecture Setup** - Implemented clean architecture with:
+  - Routes layer (health.routes.js, index.js)
+  - Controllers layer (health.controller.js)
+  - Services layer (health.service.js)
+  - Middleware (errorHandler, notFound, logger)
+  - Utils (asyncHandler, AppError)
+  - Database helpers (fileStorage.js)
+  - Health check endpoint: GET /api/health
 
 ---
 

@@ -68,6 +68,83 @@ Only setup the project foundation and required documentation structure.
 
 ---
 
+## Prompt 2 - Backend Architecture Setup
+
+### Date: 2026-06-01
+
+**Context:** Set up clean architecture for Express backend with proper separation of concerns to enable maintainable and scalable feature development.
+
+**Prompt:**
+```
+Act as a Senior Full-stack Engineer.
+
+We are continuing an existing monorepo project.
+
+IMPORTANT CONTEXT:
+- docs/plan.md already exists
+- docs/design.md already exists
+- docs/prompts.md already exists
+- You MUST ONLY update these files (never create new markdown/documentation files)
+
+STRICT RULE:
+- Do NOT create any new .md files under any circumstances
+- Only update the existing 3 files listed above
+
+TASK: Backend Architecture Setup
+
+Create a maintainable Express backend architecture with the following structure:
+
+- routes
+- controllers
+- services
+- middleware
+- utils
+- database helpers
+
+Requirements:
+1. Keep responsibilities strictly separated.
+2. Do NOT implement any product or order business logic yet.
+3. Add a simple health check endpoint (GET /health).
+4. Ensure backend follows clean architecture principles.
+5. Ensure code is structured for future feature expansion.
+
+DOCUMENTATION UPDATE REQUIREMENTS:
+
+### docs/plan.md
+- Mark backend architecture setup as completed
+- Add a new step describing what was implemented
+- Update progress clearly (do not rewrite full file unless necessary)
+
+### docs/design.md
+- Document backend folder structure
+- Explain responsibilities of each layer (routes/controllers/services/etc.)
+- Describe request flow from entry → response
+
+### docs/prompts.md
+- Append this prompt as:
+  "Prompt 2 - Backend Architecture Setup"
+- Keep chronological order of prompts
+
+FINAL REQUIREMENT:
+- Do NOT create any new documentation files
+- Do NOT modify frontend or data layer
+- Only implement backend architecture scaffolding and health check endpoint
+
+Finally:
+Explain the backend folder structure and request flow clearly.
+```
+
+**Result:** Successfully implemented clean backend architecture with:
+- 6 layers: routes, controllers, services, middleware, utils, database
+- 10 new files organized by responsibility
+- Health check endpoint following clean architecture pattern
+- Request flow: Client → Middleware → Routes → Controller → Service → Database → Response
+- Error handling with custom middleware
+- File storage abstraction for JSON data access
+- Updated all 3 documentation files (plan.md, design.md, prompts.md)
+
+---
+
 ## Future Prompts
 
 Document additional prompts here as development continues. Include:
