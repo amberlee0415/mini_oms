@@ -122,6 +122,15 @@ Mini OMS (Order Management System) - A modern monorepo application for managing 
   - Eliminated all duplicated calculation logic
   - Ensures consistency between frontend and backend
   - Same formulas: subtotal = unitPrice × quantity, total = sum of subtotals
+- [x] **System Hardening & Bug Fixes** - Enhanced validation and reliability:
+  - **Backend Validation:** Strengthened to handle NaN, Infinity, null, undefined, non-integers
+  - **Product Validation:** Price and name validation with type checking
+  - **Order Validation:** Quantity must be positive integer, productId validation
+  - **Submission Safety:** Duplicate submission prevention in ProductsPage and OrdersPage
+  - **Frontend Validation:** Quantity input validation, step=1 to prevent decimals
+  - **Storage Reliability:** JSON file handling already robust (empty/corrupted files)
+  - **Data Integrity:** Backend validates all data before persistence
+  - Issues fixed: Invalid quantities, malformed payloads, duplicate submissions
 
 ---
 

@@ -1024,6 +1024,211 @@ const total = calculateOrderTotal(orderRows);
 - ✅ Easy to maintain and extend
 - ✅ Testable pure functions
 
+### Edge Case Handling & System Hardening (Implemented)
+
+**Purpose:** Ensure system reliability and data integrity through comprehensive validation and error handling.
+
+#### **Backend Validation Improvements**
+
+**Product Service Validation:**
+```javascript
+// Validates: null, undefined, NaN, Infinity, type checking
+if (
+  productData.price === null ||
+  productData.price === undefined ||
+  typeof productData.price !== 'number' ||
+  isNaN(productData.price) ||
+  !isFinite(productData.price) ||
+  productData.price <= 0
+) {
+  throw new AppError('Price must be a valid number greater than 0', 400);
+}
+```
+
+**Order Service Validation:**
+```javascript
+// Quantity validation - ensures positive integers only
+if (
+  item.quantity === null ||
+  item.quantity === undefined ||
+  typeof item.quantity !== 'number' ||
+  isNaN(item.quantity) ||
+  !isFinite(item.quantity) ||
+  item.quantity <= 0 ||
+  !Number.isInteger(item.quantity)
+) {
+  throw new AppError('Each item must have a valid integer quantity greater than 0', 400);
+}
+
+// ProductId validation
+if (!item.productId || typeof item.productId !== 'string' || item.productId.trim() === '') {
+  throw new AppError('Each item must have a valid productId', 400);
+}
+```
+
+**Edge Cases Handled:**
+- ✅ `null` values → Rejected with clear error
+- ✅ `undefined` values → Rejected with clear error
+- ✅ `NaN` (Not a Number) → Rejected with clear error
+- ✅ `Infinity` / `-Infinity` → Rejected with clear error
+- ✅ Decimal quantities → Rejected (must be integers)
+- ✅ Negative quantities → Rejected (must be > 0)
+- ✅ Empty strings → Rejected with clear error
+- ✅ Wrong data types → Rejected with type checking
+
+#### **Frontend Validation Improvements**
+
+**Quantity Input Validation (OrderRow):**
+```javascript
+const handleQuantityChange = (e) => {
+  const value = e.target.value;
+  
+  // Allow empty input for user to clear and retype
+  if (value === '') {
+    onQuantityChange(row.id, 0);
+    return;
+  }
+  
+  // Parse as integer
+  const quantity = parseInt(value, 10);
+  
+  // Validate: must be a valid integer >= 0
+  if (isNaN(quantity) || quantity < 0) {
+    return; // Ignore invalid input
+  }
+  
+  onQuantityChange(row.id, quantity);
+};
+```
+
+**HTML Input Constraints:**
+```html
+<input
+  type="number"
+  min="1"
+  step="1"  <!-- Prevents decimal input -->
+  value={row.quantity || ''}
+  onChange={handleQuantityChange}
+/>
+```
+
+**Submission Safety Guards:**
+```javascript
+// ProductsPage - Prevent duplicate submissions
+const handleFormSubmit = async (formData) => {
+  if (actionLoading) {
+    return; // Guard: Already processing
+  }
+  // ... rest of logic
+};
+
+// OrdersPage - Prevent duplicate submissions
+const handleSubmit = async (e) => {
+  e.preventDefault();
+  
+  if (submitting) {
+    return; // Guard: Already processing
+  }
+  // ... rest of logic
+};
+```
+
+#### **Storage Reliability**
+
+**JSON File Handling (Already Robust):**
+
+The `fileStorage.js` helper already handles:
+- ✅ **Empty files** → Returns `[]`
+- ✅ **Corrupted JSON** → Returns `[]` and logs error
+- ✅ **File not found** → Returns `[]` (expected for new files)
+- ✅ **Invalid array** → Returns `[]` if not an array
+- ✅ **Write failures** → Returns `false` and logs error
+
+**Example:**
+```javascript
+export const readJson = async (filename) => {
+  try {
+    const fileContent = await readFile(filePath, 'utf-8');
+    
+    // Handle empty file
+    if (!fileContent || fileContent.trim() === '') {
+      console.warn(`File ${filename} is empty, returning empty array`);
+      return [];
+    }
+    
+    // Parse JSON with error handling
+    try {
+      const parsedData = JSON.parse(fileContent);
+      
+      // Ensure we always return an array
+      if (!Array.isArray(parsedData)) {
+        console.warn(`File ${filename} does not contain an array`);
+        return [];
+      }
+      
+      return parsedData;
+    } catch (parseError) {
+      console.error(`Invalid JSON in ${filename}:`, parseError.message);
+      return []; // Corrupted file handled gracefully
+    }
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      console.info(`File ${filename} not found, returning empty array`);
+      return [];
+    }
+    console.error(`Error reading ${filename}:`, error.message);
+    return [];
+  }
+};
+```
+
+#### **Data Integrity Guarantees**
+
+**Product-Order Relationship:**
+- Orders **cannot** reference non-existent products
+- Backend validates `productId` against `products.json`
+- If product deleted, existing orders retain product data (snapshot)
+- New orders cannot use deleted product IDs
+
+**Validation Flow:**
+```
+1. Frontend sends: { productId, quantity }
+   ↓
+2. Backend validates productId exists in products.json
+   ↓
+3. If not found → throw AppError('Product not found', 404)
+   ↓
+4. If found → Fetch product data (name, price)
+   ↓
+5. Enrich order item with trusted data
+   ↓
+6. Calculate subtotal and total
+   ↓
+7. Persist to orders.json
+```
+
+**State Synchronization:**
+- Frontend refreshes data after create/update/delete
+- `await fetchProducts()` after product operations
+- Form resets after successful submission
+- Loading states prevent stale UI
+
+#### **Risk Prevention Summary**
+
+| Risk | Prevention | Status |
+|------|-----------|--------|
+| Invalid quantities (NaN, null) | Backend validation with type checking | ✅ Fixed |
+| Decimal quantities | Frontend `step="1"` + backend integer check | ✅ Fixed |
+| Negative quantities | Frontend validation + backend `> 0` check | ✅ Fixed |
+| Infinity values | Backend `isFinite()` check | ✅ Fixed |
+| Empty productId | Backend string validation | ✅ Fixed |
+| Malformed payloads | Backend object validation | ✅ Fixed |
+| Duplicate submissions | Frontend guard with loading state | ✅ Fixed |
+| Deleted product in order | Backend validates productId exists | ✅ Fixed |
+| Corrupted JSON files | fileStorage graceful handling | ✅ Already robust |
+| Empty JSON files | fileStorage returns empty array | ✅ Already robust |
+| Stale frontend state | Refresh after operations | ✅ Already implemented |
+
 ---
 
 ## Backend Architecture

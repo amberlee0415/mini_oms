@@ -48,6 +48,11 @@ function ProductsPage() {
   };
 
   const handleFormSubmit = async (formData) => {
+    // Prevent duplicate submissions
+    if (actionLoading) {
+      return;
+    }
+
     try {
       setActionLoading(true);
       
@@ -69,6 +74,11 @@ function ProductsPage() {
   };
 
   const handleConfirmDelete = async () => {
+    // Prevent duplicate submissions
+    if (actionLoading) {
+      return;
+    }
+
     try {
       setActionLoading(true);
       await productApi.delete(selectedProduct.id);

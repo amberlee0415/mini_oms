@@ -37,13 +37,26 @@ export const getProductById = async (id) => {
  * @throws {AppError} If validation fails or save fails
  */
 export const createProduct = async (productData) => {
+  // Validate productData exists
+  if (!productData || typeof productData !== 'object') {
+    throw new AppError('Invalid product data', 400);
+  }
+
   // Validate required fields
-  if (!productData.name || productData.name.trim() === '') {
+  if (!productData.name || typeof productData.name !== 'string' || productData.name.trim() === '') {
     throw new AppError('Product name is required', 400);
   }
   
-  if (typeof productData.price !== 'number' || productData.price <= 0) {
-    throw new AppError('Price must be a number greater than 0', 400);
+  // Validate price - check for NaN, Infinity, null, undefined, <= 0
+  if (
+    productData.price === null ||
+    productData.price === undefined ||
+    typeof productData.price !== 'number' ||
+    isNaN(productData.price) ||
+    !isFinite(productData.price) ||
+    productData.price <= 0
+  ) {
+    throw new AppError('Price must be a valid number greater than 0', 400);
   }
   
   // Read existing products
@@ -80,13 +93,28 @@ export const createProduct = async (productData) => {
  * @throws {AppError} If product not found or validation fails
  */
 export const updateProduct = async (id, updates) => {
+  // Validate updates exists
+  if (!updates || typeof updates !== 'object') {
+    throw new AppError('Invalid update data', 400);
+  }
+
   // Validate updates if provided
-  if (updates.name !== undefined && updates.name.trim() === '') {
-    throw new AppError('Product name cannot be empty', 400);
+  if (updates.name !== undefined) {
+    if (typeof updates.name !== 'string' || updates.name.trim() === '') {
+      throw new AppError('Product name cannot be empty', 400);
+    }
   }
   
-  if (updates.price !== undefined && (typeof updates.price !== 'number' || updates.price <= 0)) {
-    throw new AppError('Price must be a number greater than 0', 400);
+  if (updates.price !== undefined) {
+    if (
+      updates.price === null ||
+      typeof updates.price !== 'number' ||
+      isNaN(updates.price) ||
+      !isFinite(updates.price) ||
+      updates.price <= 0
+    ) {
+      throw new AppError('Price must be a valid number greater than 0', 400);
+    }
   }
   
   // Read existing products

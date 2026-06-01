@@ -47,14 +47,22 @@ const validateAndEnrichOrderItems = async (orderItems) => {
   const enrichedItems = [];
 
   for (const item of orderItems) {
-    // Validate quantity
-    if (!item.quantity || typeof item.quantity !== 'number' || item.quantity <= 0) {
-      throw new AppError('Each item must have a valid quantity greater than 0', 400);
+    // Validate productId
+    if (!item.productId || typeof item.productId !== 'string' || item.productId.trim() === '') {
+      throw new AppError('Each item must have a valid productId', 400);
     }
 
-    // Validate productId
-    if (!item.productId) {
-      throw new AppError('Each item must have a productId', 400);
+    // Validate quantity - check for NaN, non-number, null, undefined, <= 0
+    if (
+      item.quantity === null ||
+      item.quantity === undefined ||
+      typeof item.quantity !== 'number' ||
+      isNaN(item.quantity) ||
+      !isFinite(item.quantity) ||
+      item.quantity <= 0 ||
+      !Number.isInteger(item.quantity)
+    ) {
+      throw new AppError('Each item must have a valid integer quantity greater than 0', 400);
     }
 
     // Find product in products.json
@@ -86,9 +94,19 @@ const validateAndEnrichOrderItems = async (orderItems) => {
  * @throws {AppError} If validation fails or save fails
  */
 export const createOrder = async (orderData) => {
+  // Validate orderData exists
+  if (!orderData || typeof orderData !== 'object') {
+    throw new AppError('Invalid order data', 400);
+  }
+
   // Validate customer name
-  if (!orderData.customerName || orderData.customerName.trim() === '') {
+  if (!orderData.customerName || typeof orderData.customerName !== 'string' || orderData.customerName.trim() === '') {
     throw new AppError('Customer name is required', 400);
+  }
+
+  // Validate orderItems exists
+  if (!orderData.orderItems) {
+    throw new AppError('Order items are required', 400);
   }
 
   // Validate and enrich order items (includes product lookup and price enforcement)

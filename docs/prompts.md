@@ -975,6 +975,179 @@ Explain:
 
 ---
 
+## Prompt 10 - Code Review & System Hardening
+
+### Date: 2026-06-01
+
+**Context:** Perform focused code review to fix validation issues, data consistency issues, submission safety issues, and storage reliability issues.
+
+**Prompt:**
+```
+Act as a Senior Full-stack Engineer.
+
+We are continuing an existing monorepo project.
+
+IMPORTANT CONTEXT:
+- docs/plan.md already exists
+- docs/design.md already exists
+- docs/prompts.md already exists
+- You MUST ONLY update these files (never create new markdown/documentation files)
+
+STRICT RULE:
+- Do NOT create any new .md files under any circumstances
+- Do NOT introduce new features or modules
+- Do NOT refactor architecture
+- Only fix bugs and edge cases in existing implementation
+
+TASK: Code Review & System Hardening
+
+Perform a focused code review of the existing system (frontend + backend).
+
+SCOPE: Fix ONLY the following issues:
+
+1. Validation Issues
+- invalid quantities (<= 0, NaN, null, undefined)
+- malformed API payloads (missing required fields)
+- invalid product references in orders
+
+2. Data Consistency Issues
+- deleted product referenced in existing orders
+- stale frontend state after API updates
+- mismatch between frontend and backend calculated values
+
+3. Submission Safety Issues
+- duplicate submissions (double click / rapid submit)
+- missing request validation on backend
+
+4. Storage Reliability Issues
+- empty JSON files handling (products.json, orders.json)
+- corrupted JSON file handling (invalid JSON parse scenarios)
+
+REQUIREMENTS:
+
+1. Backend Fixes:
+- Strengthen validation in services layer
+- Ensure JSON helper safely handles corrupted or empty files
+- Ensure no invalid data is persisted
+
+2. Frontend Fixes:
+- Prevent duplicate form submission (disable button / loading state)
+- Sync UI state properly after create/update/delete operations
+- Ensure stale state is refreshed correctly after API responses
+
+3. Data Integrity Rules:
+- Orders MUST NOT reference deleted products
+- Invalid products must be rejected during order creation/update
+- Backend is source of truth for validation
+
+4. Safety Rules:
+- Do NOT introduce new architecture or folders
+- Do NOT add new business features
+- Only fix issues inside existing codebase
+- Keep fixes minimal and targeted
+
+DOCUMENTATION UPDATE REQUIREMENTS:
+
+### docs/plan.md
+- Mark system hardening and bug fixes as completed
+- Add list of issues resolved (validation, state sync, storage safety)
+
+### docs/design.md
+- Document edge case handling strategy
+- Explain how system now handles corrupted JSON, invalid data, and stale state
+- Highlight improvements in data integrity and reliability
+
+### docs/prompts.md
+- Append this prompt as:
+  "Prompt 10 - Code Review & System Hardening"
+
+FINAL RULES:
+- Do NOT create any new documentation files
+- Do NOT refactor working features unnecessarily
+- Only fix confirmed issues and edge cases
+
+Finally:
+Provide a structured report:
+
+1. Issues found
+2. Root cause
+3. Fix applied
+4. Risk prevented
+```
+
+**Result:** Successfully hardened system with comprehensive validation and safety improvements:
+
+**Issues Found & Fixed:**
+
+1. **Backend Validation Issues:**
+   - **Issue:** Quantity validation didn't handle NaN, Infinity, decimals
+   - **Root Cause:** Simple `<= 0` check insufficient for edge cases
+   - **Fix:** Added comprehensive validation: `isNaN()`, `isFinite()`, `Number.isInteger()`
+   - **Risk Prevented:** Invalid quantities causing calculation errors or data corruption
+
+2. **Product Validation Issues:**
+   - **Issue:** Price validation didn't handle NaN, Infinity, null
+   - **Root Cause:** Basic type check without edge case handling
+   - **Fix:** Added null check, NaN check, Infinity check, type validation
+   - **Risk Prevented:** Invalid prices causing incorrect order totals
+
+3. **ProductId Validation Issues:**
+   - **Issue:** Empty string productId could pass validation
+   - **Root Cause:** Only checked existence, not string validity
+   - **Fix:** Added type check and trim validation
+   - **Risk Prevented:** Orders with invalid product references
+
+4. **Payload Validation Issues:**
+   - **Issue:** Missing object validation for orderData and productData
+   - **Root Cause:** Assumed valid object structure
+   - **Fix:** Added object existence and type checks
+   - **Risk Prevented:** Malformed payloads causing server errors
+
+5. **Duplicate Submission Issues:**
+   - **Issue:** Rapid clicks could trigger multiple API calls
+   - **Root Cause:** No guard against re-entry during async operations
+   - **Fix:** Added `if (submitting) return;` guards in ProductsPage and OrdersPage
+   - **Risk Prevented:** Duplicate orders/products, race conditions
+
+6. **Frontend Quantity Input Issues:**
+   - **Issue:** Users could enter decimals or negative numbers
+   - **Root Cause:** Basic parseInt without validation
+   - **Fix:** Added `step="1"` attribute, NaN check, negative check
+   - **Risk Prevented:** Invalid quantities sent to backend
+
+**Storage Reliability:**
+- **Status:** Already robust - fileStorage.js handles empty/corrupted files gracefully
+- **Verified:** Returns empty array for all error scenarios
+
+**Data Integrity:**
+- **Status:** Already enforced - backend validates productId exists before creating orders
+- **Verified:** Orders cannot reference non-existent products
+
+**State Synchronization:**
+- **Status:** Already implemented - frontend refreshes after operations
+- **Verified:** `await fetchProducts()` called after create/update/delete
+
+**Files Modified:**
+- `apps/backend/src/services/order.service.js` - Enhanced validation (5 improvements)
+- `apps/backend/src/services/product.service.js` - Enhanced validation (3 improvements)
+- `apps/frontend/src/pages/OrdersPage.jsx` - Duplicate submission guard
+- `apps/frontend/src/pages/ProductsPage.jsx` - Duplicate submission guards (2 locations)
+- `apps/frontend/src/components/orders/OrderRow.jsx` - Quantity validation + step attribute
+
+**Validation Coverage:**
+- ✅ NaN handling
+- ✅ Infinity handling
+- ✅ null/undefined handling
+- ✅ Type checking
+- ✅ Integer validation
+- ✅ Positive number validation
+- ✅ String validation
+- ✅ Object validation
+
+**Updated Documentation:** plan.md (marked system hardening complete with issues list), design.md (added Edge Case Handling & System Hardening section with code examples and risk prevention table), prompts.md (this entry)
+
+---
+
 ## Future Prompts
 
 Document additional prompts here as development continues. Include:

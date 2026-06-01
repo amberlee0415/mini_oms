@@ -13,7 +13,22 @@ function OrderRow({ row, products, onProductChange, onQuantityChange, onRemove }
   };
 
   const handleQuantityChange = (e) => {
-    const quantity = parseInt(e.target.value) || 0;
+    const value = e.target.value;
+    
+    // Allow empty input for user to clear and retype
+    if (value === '') {
+      onQuantityChange(row.id, 0);
+      return;
+    }
+    
+    // Parse as integer
+    const quantity = parseInt(value, 10);
+    
+    // Validate: must be a valid integer >= 0
+    if (isNaN(quantity) || quantity < 0) {
+      return; // Ignore invalid input
+    }
+    
     onQuantityChange(row.id, quantity);
   };
 
@@ -40,6 +55,7 @@ function OrderRow({ row, products, onProductChange, onQuantityChange, onRemove }
         <input
           type="number"
           min="1"
+          step="1"
           value={row.quantity || ''}
           onChange={handleQuantityChange}
           className="w-24 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
