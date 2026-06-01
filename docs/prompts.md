@@ -452,6 +452,135 @@ Explain how routing flows through the layout and page structure.
 
 ---
 
+## Prompt 6 - Product Management UI Implementation
+
+### Date: 2026-06-01
+
+**Context:** Implement complete Product Management UI with CRUD operations, integrating frontend components with backend Product API.
+
+**Prompt:**
+```
+Act as a Senior Full-stack Engineer.
+
+We are continuing an existing monorepo project.
+
+IMPORTANT CONTEXT:
+- docs/plan.md already exists
+- docs/design.md already exists
+- docs/prompts.md already exists
+- You MUST ONLY update these files (never create new markdown/documentation files)
+
+STRICT RULE:
+- Do NOT create any new .md files under any circumstances
+- Do NOT introduce new architecture layers
+- Only implement Product Management frontend feature using existing structure
+
+TASK: Implement Product Management Page
+
+We already have:
+- React 19 + Vite frontend
+- Routing setup (/products route exists as placeholder)
+- Backend Product CRUD APIs available
+
+PRODUCT MANAGEMENT FEATURES:
+
+1. Product Table
+- Display list of products
+- Columns: name, description, price
+- Include action buttons: Edit, Delete
+
+2. Create Product
+- Modal form
+- Fields:
+  - name (required)
+  - description
+  - price (> 0 validation)
+- Submit to POST /products
+
+3. Edit Product
+- Modal form pre-filled with product data
+- Update via PUT /products/:id
+
+4. Delete Product
+- Confirmation modal before deletion
+- Call DELETE /products/:id
+
+5. UI States:
+- Loading state (while fetching data)
+- Empty state (no products)
+- Error handling for API failures
+
+ARCHITECTURE RULES:
+
+1. API Layer:
+- All backend calls MUST be in services layer (NOT inside components)
+- Use existing frontend/services structure
+
+2. Component Separation:
+- Product page should NOT contain modal logic directly
+- Extract reusable components:
+  - ProductTable
+  - ProductFormModal (used for create & edit)
+  - ConfirmDeleteModal
+
+3. State Management:
+- Use React hooks (useState, useEffect)
+- Keep state local and simple
+- Do NOT introduce external state libraries
+
+4. UX Requirements:
+- Use Tailwind CSS for clean UI
+- Ensure responsive layout
+- Disable buttons during API calls
+- Show loading indicators properly
+
+5. Data Flow:
+- Page → Service → Backend API
+- No direct fetch calls inside UI components
+
+DOCUMENTATION UPDATE REQUIREMENTS:
+
+### docs/plan.md
+- Mark Product Management UI implementation as completed
+- Add step describing frontend-backend integration
+
+### docs/design.md
+- Document Product UI architecture
+- Explain component breakdown (page → table → modal → service)
+- Explain API integration flow
+
+### docs/prompts.md
+- Append this prompt as:
+  "Prompt 6 - Product Management UI Implementation"
+
+FINAL RULES:
+- Do NOT create any new documentation files
+- Do NOT modify backend in this step
+- Only implement frontend Product Management feature
+- Ensure reusable and maintainable component design
+
+Finally:
+Explain how data flows from UI → service → API → backend → response → UI update.
+```
+
+**Result:** Successfully implemented Product Management UI with:
+- **Components:**
+  - ProductTable (displays products, loading, empty states)
+  - ProductFormModal (create/edit with validation)
+  - ConfirmDeleteModal (delete confirmation)
+- **ProductsPage:** Full state management with useState/useEffect
+- **CRUD Operations:** Create, Read, Update, Delete all functional
+- **Validation:** Name required, price > 0 with error messages
+- **Loading States:** Initial fetch loading, action loading (saving/deleting)
+- **Error Handling:** API error display with retry button
+- **Empty State:** "No products found" message
+- **UI/UX:** Tailwind CSS, responsive layout, disabled buttons during actions
+- **Data Flow:** ProductsPage → productApi service → Backend API → Response → State update → UI refresh
+- **Component Separation:** Page handles state/API, components are presentational
+- **Updated Documentation:** plan.md (marked Product UI complete), design.md (added Product UI Architecture with component breakdown and data flow), prompts.md (this entry)
+
+---
+
 ## Future Prompts
 
 Document additional prompts here as development continues. Include:

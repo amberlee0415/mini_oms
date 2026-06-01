@@ -422,6 +422,152 @@ const products = await productApi.getAll();
    - All routes use same layout
    - All pages follow same pattern
 
+### Product UI Architecture (Implemented)
+
+**Component Breakdown:**
+```
+ProductsPage (Page Component)
+├── State Management (useState, useEffect)
+├── API Integration (productApi service)
+├── ProductTable Component
+│   ├── Loading state (spinner)
+│   ├── Empty state (no products message)
+│   └── Product rows (name, description, price, actions)
+├── ProductFormModal Component
+│   ├── Form fields (name, description, price)
+│   ├── Validation (name required, price > 0)
+│   └── Submit (create or update)
+└── ConfirmDeleteModal Component
+    ├── Confirmation message
+    └── Delete action
+```
+
+**Component Responsibilities:**
+
+#### **ProductsPage** (Page Component)
+- **State Management:**
+  - `products` - Array of products
+  - `loading` - Initial data fetch state
+  - `actionLoading` - Create/update/delete action state
+  - `error` - Error messages
+  - `isFormModalOpen` - Form modal visibility
+  - `isDeleteModalOpen` - Delete modal visibility
+  - `selectedProduct` - Product being edited/deleted
+
+- **Functions:**
+  - `fetchProducts()` - Fetch all products from API
+  - `handleCreate()` - Open form modal for new product
+  - `handleEdit(product)` - Open form modal with product data
+  - `handleDelete(product)` - Open delete confirmation modal
+  - `handleFormSubmit(formData)` - Create or update product
+  - `handleConfirmDelete()` - Delete product
+  - `handleCloseModals()` - Close all modals
+
+- **Data Flow:**
+  - Fetches products on mount (useEffect)
+  - Passes data to child components via props
+  - Handles all API calls through productApi service
+  - Re-fetches data after create/update/delete
+
+#### **ProductTable** Component
+- **Props:** `products`, `onEdit`, `onDelete`, `loading`
+- **Responsibilities:**
+  - Display products in table format
+  - Show loading spinner during fetch
+  - Show empty state when no products
+  - Trigger edit/delete actions via callbacks
+- **No API calls** - pure presentational component
+
+#### **ProductFormModal** Component
+- **Props:** `isOpen`, `onClose`, `onSubmit`, `product`, `loading`
+- **Responsibilities:**
+  - Display form for create/edit
+  - Manage form state (name, description, price)
+  - Validate input (name required, price > 0)
+  - Submit data via callback
+  - Pre-fill form when editing
+- **No API calls** - delegates to parent
+
+#### **ConfirmDeleteModal** Component
+- **Props:** `isOpen`, `onClose`, `onConfirm`, `product`, `loading`
+- **Responsibilities:**
+  - Display confirmation message
+  - Show product name being deleted
+  - Trigger delete via callback
+- **No API calls** - delegates to parent
+
+**API Integration Flow:**
+```
+1. User Action (e.g., clicks "Create Product")
+   ↓
+2. ProductsPage handler (handleCreate)
+   ↓
+3. Opens ProductFormModal
+   ↓
+4. User fills form and submits
+   ↓
+5. ProductFormModal validates and calls onSubmit callback
+   ↓
+6. ProductsPage.handleFormSubmit receives data
+   ↓
+7. Calls productApi.create(formData)
+   ↓
+8. Service Layer (api.js)
+   ├── Constructs request: POST /api/products
+   ├── Sends to backend
+   └── Returns response
+   ↓
+9. Backend processes request
+   ├── Routes → Controller → Service → Database
+   └── Returns: { status: 'success', data: {...} }
+   ↓
+10. ProductsPage receives response
+    ├── Closes modal
+    ├── Calls fetchProducts() to refresh list
+    └── Updates UI with new data
+```
+
+**State Flow Example (Create Product):**
+```
+Initial State:
+- products: []
+- loading: true
+- isFormModalOpen: false
+
+User clicks "Create Product":
+- isFormModalOpen: true
+- selectedProduct: null
+
+User submits form:
+- actionLoading: true
+- API call: productApi.create(data)
+
+API success:
+- actionLoading: false
+- isFormModalOpen: false
+- loading: true (refresh)
+- API call: productApi.getAll()
+
+Fetch complete:
+- loading: false
+- products: [newProduct, ...]
+- UI updates with new product
+```
+
+**Error Handling:**
+- API errors caught in try-catch
+- Error displayed in alert (simple approach)
+- Fetch errors shown in error banner with retry button
+- Loading states prevent duplicate submissions
+
+**UX Features:**
+- Buttons disabled during API calls
+- Loading indicators ("Saving...", "Deleting...")
+- Form validation with error messages
+- Empty state with helpful message
+- Responsive table layout
+- Modal overlays with backdrop
+
 ---
 
 ## Backend Architecture
