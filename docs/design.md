@@ -661,6 +661,251 @@ Fetch complete:
 - Responsive table layout
 - Modal overlays with backdrop
 
+### Order UI Architecture (Implemented)
+
+**Component Breakdown:**
+```
+OrdersPage (Page Component)
+├── State Management (useState, useEffect)
+├── API Integration (productApi, orderApi)
+├── Customer Name Input
+└── OrderGrid Component
+    ├── OrderRow Component (multiple instances)
+    │   ├── ProductDropdown Component
+    │   ├── Product Name Display (auto-filled)
+    │   ├── Unit Price Display (auto-filled)
+    │   ├── Quantity Input
+    │   ├── Subtotal Display (calculated)
+    │   └── Remove Button
+    └── OrderSummary Component
+        └── Total Amount Display (calculated)
+```
+
+**Component Responsibilities:**
+
+#### **OrdersPage** (Page Component)
+- **State Management:**
+  - `products` - Array of products from API
+  - `orderRows` - Array of order items in grid
+  - `customerName` - Customer name input
+  - `loading` - Products fetch state
+  - `submitting` - Order submission state
+  - `error` - Error messages
+  - `validationErrors` - Form validation errors
+
+- **Functions:**
+  - `fetchProducts()` - GET /api/products on mount
+  - `validateOrder()` - Validate customerName and orderRows
+  - `handleSubmit()` - Submit order to POST /api/orders
+  - `handleReset()` - Clear form
+
+- **Data Flow:**
+  - Fetches products on mount
+  - Passes products to OrderGrid
+  - Receives orderRows updates from OrderGrid
+  - Validates and submits to backend
+
+#### **OrderGrid** Component
+- **Props:** `products`, `orderRows`, `setOrderRows`
+- **State:** `totalAmount` (calculated from orderRows)
+- **Responsibilities:**
+  - Render table with OrderRow components
+  - Add new rows with "Add Item" button
+  - Remove rows via callback
+  - Calculate total amount in real-time
+  - Update parent state (orderRows)
+- **No API calls** - pure UI logic
+
+#### **OrderRow** Component
+- **Props:** `row`, `products`, `onProductChange`, `onQuantityChange`, `onRemove`
+- **Responsibilities:**
+  - Render single order item row
+  - Handle product selection
+  - Handle quantity changes
+  - Display calculated subtotal
+  - Trigger remove action
+- **Calculation:** subtotal = unitPrice × quantity
+
+#### **ProductDropdown** Component
+- **Props:** `products`, `selectedProductId`, `onChange`, `disabled`
+- **Responsibilities:**
+  - Render dropdown with products from API
+  - Display product name and price
+  - Trigger selection callback
+- **No state** - controlled component
+
+#### **OrderSummary** Component
+- **Props:** `totalAmount`
+- **Responsibilities:**
+  - Display total amount
+  - Format currency
+- **No logic** - pure presentation
+
+**Real-time Calculation Flow:**
+
+```
+1. User selects product in dropdown
+   ↓
+2. ProductDropdown calls onChange(productId)
+   ↓
+3. OrderRow.handleProductChange()
+   ├── Find product in products array
+   ├── Extract: { id, name, price }
+   └── Call: onProductChange(rowId, productData)
+   ↓
+4. OrderGrid.handleProductChange()
+   ├── Update row in orderRows array:
+   │   ├── productId = product.id
+   │   ├── productName = product.name (AUTO-FILLED)
+   │   ├── unitPrice = product.price (AUTO-FILLED)
+   │   ├── quantity = existing quantity
+   │   └── subtotal = unitPrice × quantity (CALCULATED)
+   └── Call: setOrderRows(updatedRows)
+   ↓
+5. OrderGrid useEffect triggers
+   ├── Detects orderRows change
+   ├── Calculates: total = sum of all subtotals
+   └── Updates: setTotalAmount(total)
+   ↓
+6. UI Updates
+   ├── OrderRow shows productName, unitPrice, subtotal
+   └── OrderSummary shows updated totalAmount
+```
+
+**Quantity Change Flow:**
+
+```
+1. User changes quantity input
+   ↓
+2. OrderRow.handleQuantityChange()
+   ├── Parse: parseInt(value)
+   └── Call: onQuantityChange(rowId, quantity)
+   ↓
+3. OrderGrid.handleQuantityChange()
+   ├── Update row in orderRows array:
+   │   ├── quantity = new quantity
+   │   └── subtotal = unitPrice × quantity (RECALCULATED)
+   └── Call: setOrderRows(updatedRows)
+   ↓
+4. OrderGrid useEffect triggers
+   ├── Recalculates total amount
+   └── Updates: setTotalAmount(total)
+   ↓
+5. UI Updates
+   ├── OrderRow shows new subtotal
+   └── OrderSummary shows updated totalAmount
+```
+
+**Order Submission Flow:**
+
+```
+1. User clicks "Create Order"
+   ↓
+2. OrdersPage.handleSubmit()
+   ├── e.preventDefault()
+   └── Call: validateOrder()
+   ↓
+3. Validation
+   ├── Check: customerName.trim() !== '' ✓
+   ├── Check: orderRows.length > 0 ✓
+   ├── Check: all rows have productId and quantity > 0 ✓
+   └── Result: Valid ✓
+   ↓
+4. Prepare Order Data
+   orderData = {
+     customerName: "John Doe",
+     orderItems: [
+       { productId: "prod-1", quantity: 2 },
+       { productId: "prod-2", quantity: 1 }
+     ]
+   }
+   Note: Only send productId and quantity
+   Backend will fetch productName and unitPrice
+   ↓
+5. API Call
+   ├── setSubmitting(true)
+   ├── Call: orderApi.create(orderData)
+   └── Wait for response...
+   ↓
+6. Service Layer (api.js)
+   ├── POST /api/orders
+   ├── Body: JSON.stringify(orderData)
+   └── Returns promise
+   ↓
+7. Backend Processing
+   ├── Validates productId exists
+   ├── Fetches productName and unitPrice from products.json
+   ├── Calculates subtotals and totalAmount
+   ├── Saves to orders.json
+   └── Returns: created order with all fields
+   ↓
+8. Response Received
+   ├── setSubmitting(false)
+   ├── Reset form: customerName = '', orderRows = []
+   └── Show: alert('Order created successfully!')
+   ↓
+9. UI Updates
+   ├── Form cleared
+   └── Grid empty
+```
+
+**State Management Pattern:**
+
+```javascript
+// Immutable state updates
+const handleProductChange = (rowId, productData) => {
+  setOrderRows(orderRows.map(row => {
+    if (row.id === rowId) {
+      return {
+        ...row,                          // Keep existing fields
+        productId: productData.productId,
+        productName: productData.productName,
+        unitPrice: productData.unitPrice,
+        subtotal: productData.unitPrice * row.quantity
+      };
+    }
+    return row;                          // Return unchanged
+  }));
+};
+
+// Add row (immutable)
+const addRow = () => {
+  setOrderRows([...orderRows, newRow]);  // Create new array
+};
+
+// Remove row (immutable)
+const removeRow = (rowId) => {
+  setOrderRows(orderRows.filter(row => row.id !== rowId));
+};
+```
+
+**Validation Rules:**
+
+1. **Customer Name:** Required, non-empty
+2. **Order Items:** Must have at least one row
+3. **Product Selection:** Each row must have productId
+4. **Quantity:** Each row must have quantity > 0
+5. **Submit Button:** Disabled if orderRows.length === 0
+
+**Data Integrity:**
+
+- **Product Data:** Fetched from GET /products API (not hardcoded)
+- **Auto-fill:** productName and unitPrice from selected product
+- **Frontend Calculation:** For display only (subtotal, totalAmount)
+- **Backend Validation:** Backend recalculates and validates everything
+- **Price Integrity:** Backend fetches prices from products.json (trusted source)
+
+**UX Features:**
+
+- Loading spinner while fetching products
+- Error state with retry button
+- Disabled buttons during submission
+- Validation error messages
+- Empty state message in grid
+- Real-time subtotal and total updates
+- Reset button to clear form
+- Submit button disabled when no items
+
 ---
 
 ## Backend Architecture

@@ -710,6 +710,149 @@ Explain how order creation flow works step-by-step including validation, product
 
 ---
 
+## Prompt 8 - Interactive Order Entry Grid Implementation
+
+### Date: 2026-06-01
+
+**Context:** Implement interactive order entry grid with real-time calculations, product dropdown integration, and dynamic row management for creating orders.
+
+**Prompt:**
+```
+Act as a Senior Full-stack Engineer.
+
+We are continuing an existing monorepo project.
+
+IMPORTANT CONTEXT:
+- docs/plan.md already exists
+- docs/design.md already exists
+- docs/prompts.md already exists
+- You MUST ONLY update these files (never create new markdown/documentation files)
+
+STRICT RULE:
+- Do NOT create any new .md files under any circumstances
+- Do NOT introduce new backend logic in this step
+- Only implement frontend Order Entry UI using existing APIs
+
+TASK: Implement Interactive Order Entry Grid (Frontend)
+
+We already have:
+- Order CRUD API completed
+- Product API available
+- React frontend with services layer
+
+FEATURE REQUIREMENTS:
+
+1. Order Grid Functionality:
+- User can dynamically add order rows
+- User can remove order rows
+- Each row represents one orderItem
+
+2. Product Selection:
+- Product dropdown MUST fetch from GET /products API
+- On product selection:
+  - auto-fill productName
+  - auto-fill unitPrice (from selected product)
+- Do NOT hardcode any product data
+
+3. Quantity Handling:
+- Quantity input per row
+- Must validate quantity > 0
+- Quantity changes immediately update:
+  - subtotal = unitPrice × quantity
+
+4. Total Calculation:
+- totalAmount updates in real-time
+- totalAmount = sum of all row subtotals
+- No backend call required for calculation updates
+
+5. Data Integrity Rules:
+- orderItems must always contain:
+  {
+    productId,
+    productName,
+    unitPrice,
+    quantity,
+    subtotal
+  }
+
+6. UX Requirements:
+- Clean table/grid UI using Tailwind CSS
+- Disable invalid actions (e.g. submit with empty grid)
+- Prevent duplicate submissions
+- Show loading state during submission
+- Show validation errors clearly
+
+7. Component Architecture (MANDATORY):
+Split into reusable components:
+- OrderGrid (main container)
+- OrderRow (single row logic)
+- ProductDropdown (reusable product selector)
+- OrderSummary (total display)
+
+8. State Management Rules:
+- Use React hooks only (useState, useEffect)
+- Keep grid state local to Order page
+- Avoid external state libraries
+- Ensure state updates are immutable
+
+9. API Usage Rules:
+- Product data must come from service layer only
+- Order submission must call POST /orders
+- Do NOT calculate totals on backend in UI logic (backend already handles final validation)
+
+DOCUMENTATION UPDATE REQUIREMENTS:
+
+### docs/plan.md
+- Mark Interactive Order Grid implementation as completed
+- Add step describing frontend order entry system with real-time calculation
+
+### docs/design.md
+- Document Order UI architecture
+- Explain grid → row → dropdown → summary flow
+- Explain how frontend interacts with product API and order API
+- Describe real-time calculation strategy
+
+### docs/prompts.md
+- Append this prompt as:
+  "Prompt 8 - Interactive Order Entry Grid Implementation"
+
+FINAL RULES:
+- Do NOT create any new documentation files
+- Do NOT modify backend in this step
+- Only implement frontend order entry grid
+- Ensure clean separation between UI, state, and API layer
+
+Finally:
+Explain the full data flow from:
+user interaction → grid state → calculation → API submission → backend validation → persistence
+```
+
+**Result:** Successfully implemented Interactive Order Entry Grid with:
+- **Components:**
+  - ProductDropdown (fetches products from API, displays name and price)
+  - OrderRow (single row with product selection, quantity, subtotal)
+  - OrderSummary (displays real-time total amount)
+  - OrderGrid (manages rows, add/remove, real-time calculations)
+- **OrdersPage:** Full state management with validation and API integration
+- **Product Integration:** Dropdown populated from GET /products API
+- **Auto-fill:** productName and unitPrice auto-filled on product selection
+- **Real-time Calculation:**
+  - subtotal = unitPrice × quantity (per row)
+  - totalAmount = sum of all subtotals (updates live)
+- **Dynamic Rows:** Add/remove rows with "Add Item" and "Remove" buttons
+- **Validation:** customerName required, orderItems not empty, quantity > 0
+- **State Management:** Immutable state updates with React hooks
+- **Data Flow:**
+  1. User selects product → auto-fills name/price → calculates subtotal
+  2. User changes quantity → recalculates subtotal → updates total
+  3. User adds/removes rows → recalculates total
+  4. User submits → validates → sends {productId, quantity} to backend
+  5. Backend validates productId → fetches prices → calculates totals → saves
+- **UX:** Loading states, error handling, disabled buttons, validation messages, empty state
+- **Updated Documentation:** plan.md (marked Order Entry Grid complete), design.md (added Order UI Architecture with component breakdown, calculation flows, submission flow), prompts.md (this entry)
+
+---
+
 ## Future Prompts
 
 Document additional prompts here as development continues. Include:
