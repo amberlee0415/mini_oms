@@ -140,15 +140,41 @@ mini_oms/
 
 ## API Design
 
-### Product Endpoints
+### Product Endpoints (Implemented ✅)
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | /api/products | Get all products |
-| GET | /api/products/:id | Get product by ID |
-| POST | /api/products | Create new product |
-| PUT | /api/products/:id | Update product |
-| DELETE | /api/products/:id | Delete product |
+| Method | Endpoint | Description | Request Body | Response |
+|--------|----------|-------------|--------------|----------|
+| GET | /api/products | Get all products | - | `{ status, data: [...] }` |
+| GET | /api/products/:id | Get product by ID | - | `{ status, data: {...} }` |
+| POST | /api/products | Create new product | `{ name, description, price }` | `{ status, data: {...} }` |
+| PUT | /api/products/:id | Update product | `{ name?, description?, price? }` | `{ status, data: {...} }` |
+| DELETE | /api/products/:id | Delete product | - | `{ status, message }` |
+
+**Product Data Structure:**
+```javascript
+{
+  id: "uuid",              // Auto-generated
+  name: "string",          // Required, non-empty
+  description: "string",   // Optional
+  price: number,           // Required, > 0
+  createdAt: "ISO 8601",   // Auto-generated
+  updatedAt: "ISO 8601"    // Auto-updated
+}
+```
+
+**Validation Rules:**
+- `name`: Required, non-empty string
+- `price`: Required, must be number > 0
+- `description`: Optional, defaults to empty string
+
+**Error Responses:**
+```javascript
+{
+  status: "error",
+  statusCode: 400|404|500,
+  message: "Error description"
+}
+```
 
 ### Order Endpoints
 
@@ -347,6 +373,184 @@ const success = await writeJson('products.json', updatedProducts);  // Returns b
 4. **Routes** - Match and execute route handlers
 5. **Not Found** - Catch unmatched routes (404)
 6. **Error Handler** - Catch and format all errors
+
+---
+
+## Product Module Architecture (Implemented)
+
+### File Structure
+```
+src/
+├── routes/
+│   └── product.routes.js      # Route definitions
+├── controllers/
+│   └── product.controller.js  # Request/response handlers
+├── services/
+│   └── product.service.js     # Business logic
+└── database/
+    └── fileStorage.js         # JSON storage (shared)
+```
+
+### Layer Responsibilities
+
+#### Routes Layer (`product.routes.js`)
+- Defines 5 endpoints: GET /, GET /:id, POST /, PUT /:id, DELETE /:id
+- Maps HTTP methods to controller functions
+- No business logic - pure routing
+
+#### Controller Layer (`product.controller.js`)
+**Functions:**
+- `getProducts()` - Handle GET /api/products
+- `getProduct()` - Handle GET /api/products/:id
+- `createProduct()` - Handle POST /api/products
+- `updateProduct()` - Handle PUT /api/products/:id
+- `deleteProduct()` - Handle DELETE /api/products/:id
+
+**Responsibilities:**
+- Extract data from `req.params`, `req.body`
+- Call corresponding service function
+- Format response: `{ status: 'success', data: ... }`
+- Pass errors to error handler via `next(error)`
+- **No business logic** - delegates to service layer
+
+#### Service Layer (`product.service.js`)
+**Functions:**
+- `getAllProducts()` - Retrieve all products
+- `getProductById(id)` - Find product by ID
+- `createProduct(data)` - Create with validation
+- `updateProduct(id, updates)` - Update with validation
+- `deleteProduct(id)` - Delete product
+
+**Responsibilities:**
+- **Validation:** Check name (required), price (> 0)
+- **Business Logic:** Generate IDs, timestamps
+- **Data Operations:** Call `readJson()`, `writeJson()`
+- **Error Handling:** Throw `AppError` for validation/not found
+- **No HTTP concerns** - pure business logic
+
+#### Database Layer (`fileStorage.js`)
+- Shared helper used by product service
+- `readJson('products.json')` - Read products array
+- `writeJson('products.json', data)` - Save products array
+- Handles all file errors gracefully
+
+### Request Flow Example: Create Product
+
+```
+1. Client Request
+   POST /api/products
+   Body: { "name": "Laptop", "price": 1000 }
+   ↓
+
+2. Express Middleware Stack
+   ├── CORS ✓
+   ├── JSON Parser ✓ (parses body)
+   └── Request Logger ✓ (logs request)
+   ↓
+
+3. Routes Layer (routes/index.js)
+   Match: /api/products → productRoutes
+   ↓
+
+4. Product Routes (product.routes.js)
+   Match: POST / → createProduct controller
+   ↓
+
+5. Product Controller (product.controller.js)
+   ├── Extract: req.body = { name, price }
+   ├── Call: productService.createProduct(req.body)
+   └── Wait for response...
+   ↓
+
+6. Product Service (product.service.js)
+   ├── Validate: name exists? ✓
+   ├── Validate: price > 0? ✓
+   ├── Call: readJson('products.json')
+   │   └── Returns: existing products array
+   ├── Generate: id (UUID), timestamps
+   ├── Create: newProduct object
+   ├── Add: newProduct to array
+   ├── Call: writeJson('products.json', updatedArray)
+   │   └── Returns: true (success)
+   └── Return: newProduct to controller
+   ↓
+
+7. Database Layer (fileStorage.js)
+   ├── readJson: Read data/products.json → parse → return array
+   └── writeJson: Stringify → write to data/products.json → return true
+   ↓
+
+8. Controller Formats Response
+   res.status(201).json({
+     status: 'success',
+     data: {
+       id: 'uuid-here',
+       name: 'Laptop',
+       price: 1000,
+       description: '',
+       createdAt: '2026-06-01T01:31:00.000Z',
+       updatedAt: '2026-06-01T01:31:00.000Z'
+     }
+   })
+   ↓
+
+9. Response Sent to Client
+```
+
+### Error Flow Example: Invalid Product
+
+```
+1. Client Request
+   POST /api/products
+   Body: { "name": "", "price": -10 }
+   ↓
+
+2-4. [Same as above through routes]
+   ↓
+
+5. Product Service (product.service.js)
+   ├── Validate: name.trim() === '' ✗
+   └── Throw: new AppError('Product name is required', 400)
+   ↓
+
+6. Controller Catches Error
+   catch (error) {
+     next(error);  // Pass to error handler
+   }
+   ↓
+
+7. Error Handler Middleware (errorHandler.js)
+   res.status(400).json({
+     status: 'error',
+     statusCode: 400,
+     message: 'Product name is required'
+   })
+   ↓
+
+8. Error Response Sent to Client
+```
+
+### Key Design Principles
+
+1. **Separation of Concerns**
+   - Routes: Define endpoints only
+   - Controllers: Handle HTTP only
+   - Services: Business logic only
+   - Database: Data access only
+
+2. **Single Responsibility**
+   - Each function does one thing
+   - Easy to test and maintain
+
+3. **Consistent Error Handling**
+   - Services throw `AppError`
+   - Controllers catch and pass to middleware
+   - Middleware formats error response
+
+4. **Reusable Components**
+   - `fileStorage.js` used by all modules
+   - `AppError` used for all errors
+   - Same pattern for products and orders
 
 ---
 

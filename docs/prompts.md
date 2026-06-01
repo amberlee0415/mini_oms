@@ -237,6 +237,111 @@ Explain how the JSON helper works and how it will be used by future modules (pro
 
 ---
 
+## Prompt 4 - Product CRUD API Implementation
+
+### Date: 2026-06-01
+
+**Context:** Implement complete Product CRUD API following clean architecture with routes, controllers, services, and JSON storage integration.
+
+**Prompt:**
+```
+Act as a Senior Full-stack Engineer.
+
+We are continuing an existing monorepo project.
+
+IMPORTANT CONTEXT:
+- docs/plan.md already exists
+- docs/design.md already exists
+- docs/prompts.md already exists
+- You MUST ONLY update these files (never create new markdown/documentation files)
+
+STRICT RULE:
+- Do NOT create any new .md files under any circumstances
+- Do NOT create unnecessary new folders or abstraction layers
+- Only implement backend product feature within existing architecture
+
+TASK: Implement Product CRUD API
+
+We already have:
+- Express backend architecture (routes, controllers, services, middleware, utils)
+- JSON storage helper (readJson, writeJson)
+- products.json file in /data
+
+PRODUCT STRUCTURE:
+{
+  id,
+  name,
+  description,
+  price
+}
+
+REQUIREMENTS:
+
+1. API Endpoints:
+- GET /products
+- GET /products/:id
+- POST /products
+- PUT /products/:id
+- DELETE /products/:id
+
+2. Architecture Rules:
+- Controllers must ONLY handle request/response
+- Business logic MUST be in services layer
+- JSON file operations MUST use existing JSON storage helper
+- Do NOT bypass helper functions
+
+3. Validation Rules:
+- name is required (non-empty string)
+- price must be a number > 0
+- Return proper error messages for invalid input
+
+4. Data Persistence:
+- All data must be stored in products.json
+- Must ensure safe read/write operations using existing helper
+
+5. Consistency Rules:
+- API response format must be consistent (success/error structure)
+- Avoid duplicated logic across controllers/services
+
+DOCUMENTATION UPDATE REQUIREMENTS:
+
+### docs/plan.md
+- Mark Product CRUD implementation as completed
+- Add step describing API implementation progress
+
+### docs/design.md
+- Document Product module architecture
+- Explain controller → service → JSON helper flow
+- Include endpoint list and responsibilities
+
+### docs/prompts.md
+- Append this prompt as:
+  "Prompt 4 - Product CRUD API Implementation"
+
+FINAL RULES:
+- Do NOT create any new documentation files
+- Do NOT change frontend or order module
+- Only implement product feature inside existing backend structure
+- Ensure clean separation of concerns
+
+Finally:
+Explain how request flows through the system from route → controller → service → JSON storage helper.
+```
+
+**Result:** Successfully implemented Product CRUD API with:
+- **Routes:** product.routes.js with 5 endpoints (GET, POST, PUT, DELETE)
+- **Controller:** product.controller.js with 5 functions (request/response handling only)
+- **Service:** product.service.js with 5 functions (business logic and validation)
+- **Validation:** name required (non-empty), price > 0
+- **Error Handling:** Uses AppError for validation and not found errors
+- **Data Persistence:** Uses readJson/writeJson from fileStorage.js
+- **Response Format:** Consistent `{ status, data/message }` structure
+- **Auto-generated:** id (UUID), createdAt, updatedAt timestamps
+- **Registered:** Product routes in main router (routes/index.js)
+- **Documentation:** Updated plan.md (marked complete), design.md (added Product Module Architecture with request flow examples), prompts.md (this entry)
+
+---
+
 ## Future Prompts
 
 Document additional prompts here as development continues. Include:
