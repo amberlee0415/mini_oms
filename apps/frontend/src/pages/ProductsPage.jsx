@@ -102,58 +102,70 @@ function ProductsPage() {
   };
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            Product Management
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Manage your product catalog
-          </p>
-        </div>
-        <button
-          onClick={handleCreate}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          Create Product
-        </button>
-      </div>
-
-      {error && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-red-800">{error}</p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Product Management
+            </h1>
+            <p className="text-gray-600 mt-2 text-sm">
+              Manage your product catalog
+            </p>
+          </div>
           <button
-            onClick={fetchProducts}
-            className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+            onClick={handleCreate}
+            className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm"
           >
-            Try again
+            <svg className="w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Create Product
           </button>
         </div>
-      )}
 
-      <ProductTable
-        products={products}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        loading={loading}
-      />
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-400 rounded-r-lg shadow-sm">
+            <div className="flex items-start">
+              <svg className="w-5 h-5 text-red-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <div className="ml-3 flex-1">
+                <p className="text-sm font-medium text-red-800">{error}</p>
+                <button
+                  onClick={fetchProducts}
+                  className="mt-2 text-sm text-red-600 hover:text-red-800 underline font-medium"
+                >
+                  Try again
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
-      <ProductFormModal
-        isOpen={isFormModalOpen}
-        onClose={handleCloseModals}
-        onSubmit={handleFormSubmit}
-        product={selectedProduct}
-        loading={actionLoading}
-      />
+        <ProductTable
+          products={products}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          loading={loading}
+        />
 
-      <ConfirmDeleteModal
-        isOpen={isDeleteModalOpen}
-        onClose={handleCloseModals}
-        onConfirm={handleConfirmDelete}
-        product={selectedProduct}
-        loading={actionLoading}
-      />
+        <ProductFormModal
+          isOpen={isFormModalOpen}
+          onClose={handleCloseModals}
+          onSubmit={handleFormSubmit}
+          product={selectedProduct}
+          loading={actionLoading}
+        />
+
+        <ConfirmDeleteModal
+          isOpen={isDeleteModalOpen}
+          onClose={handleCloseModals}
+          onConfirm={handleConfirmDelete}
+          product={selectedProduct}
+          loading={actionLoading}
+        />
+      </div>
     </div>
   );
 }
