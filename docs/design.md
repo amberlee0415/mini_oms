@@ -194,32 +194,233 @@ mini_oms/
 
 ---
 
-## Frontend Architecture
+## Frontend Architecture (Implemented)
 
-### Component Structure (Planned)
+### Folder Structure
 ```
 src/
-├── components/
-│   ├── products/
-│   │   ├── ProductList.jsx
-│   │   ├── ProductForm.jsx
-│   │   └── ProductItem.jsx
-│   │
-│   └── orders/
-│       ├── OrderList.jsx
-│       ├── OrderForm.jsx
-│       └── OrderItem.jsx
+├── pages/                  # Route-level components
+│   ├── ProductsPage.jsx    # /products route
+│   └── OrdersPage.jsx      # /orders route
 │
-├── services/
-│   └── api.js          # API client
+├── layouts/                # Shared UI structure
+│   └── MainLayout.jsx      # Main layout with navigation
 │
-├── App.jsx
-└── main.jsx
+├── components/             # Reusable UI components
+│   └── .gitkeep            # (Future: ProductList, ProductForm, etc.)
+│
+├── hooks/                  # Custom React hooks
+│   └── .gitkeep            # (Future: useProducts, useOrders, etc.)
+│
+├── services/               # API communication layer
+│   └── api.js              # API client (productApi, orderApi)
+│
+├── utils/                  # Pure helper functions
+│   └── .gitkeep            # (Future: formatters, validators, etc.)
+│
+├── App.jsx                 # Root component with routing
+├── main.jsx                # Application entry point
+└── index.css               # Global styles (Tailwind)
+```
+
+### Folder Responsibilities
+
+#### **pages/** - Route-Level Components
+**Purpose:** Components that represent entire pages/routes
+- Each file corresponds to a route
+- Contains page-level logic and layout
+- Composes smaller components
+- **No reusable UI logic** - page-specific only
+
+**Current Files:**
+- `ProductsPage.jsx` - Product management page (placeholder)
+- `OrdersPage.jsx` - Order management page (placeholder)
+
+#### **layouts/** - Shared UI Structure
+**Purpose:** Wrapper components that provide consistent UI structure
+- Navigation bars, sidebars, footers
+- Wraps page content
+- Provides consistent layout across routes
+
+**Current Files:**
+- `MainLayout.jsx` - Main application layout with:
+  - Top navigation bar with logo
+  - Navigation links (Product Management, Order Management)
+  - Content area using React Router's `<Outlet />`
+
+#### **components/** - Reusable UI Components
+**Purpose:** Small, reusable UI components
+- Pure presentational components
+- Reusable across multiple pages
+- **No business logic** - only UI rendering
+- **No API calls** - receives data via props
+
+**Future Examples:**
+- `ProductList.jsx` - Display list of products
+- `ProductForm.jsx` - Form for create/edit product
+- `Button.jsx`, `Modal.jsx`, `Card.jsx` - Generic UI components
+
+#### **hooks/** - Custom React Hooks
+**Purpose:** Reusable logic hooks
+- Extract and share stateful logic
+- **No UI rendering** - logic only
+- Follow React hooks rules
+
+**Future Examples:**
+- `useProducts.js` - Fetch and manage products state
+- `useOrders.js` - Fetch and manage orders state
+- `useForm.js` - Form state management
+
+#### **services/** - API Communication
+**Purpose:** Abstract API calls from components
+- All HTTP requests centralized here
+- **No UI logic** - pure data fetching
+- Returns promises with data
+
+**Current Files:**
+- `api.js` - API client with:
+  - `apiRequest()` - Generic fetch wrapper
+  - `productApi` - Product CRUD methods
+  - `orderApi` - Order CRUD methods
+
+#### **utils/** - Pure Helper Functions
+**Purpose:** Utility functions with no side effects
+- Data formatting, validation, calculations
+- **No state** - pure functions
+- **No API calls** - pure transformations
+
+**Future Examples:**
+- `formatDate.js` - Date formatting utilities
+- `validators.js` - Input validation functions
+- `currency.js` - Price formatting
+
+### Routing Structure
+
+**React Router v7 Configuration:**
+```javascript
+<BrowserRouter>
+  <Routes>
+    <Route path="/" element={<MainLayout />}>
+      <Route index element={<Navigate to="/products" />} />
+      <Route path="products" element={<ProductsPage />} />
+      <Route path="orders" element={<OrdersPage />} />
+    </Route>
+  </Routes>
+</BrowserRouter>
+```
+
+**Route Hierarchy:**
+- `/` - Root redirects to `/products`
+- `/products` - Product management page
+- `/orders` - Order management page
+
+**All routes wrapped by `MainLayout`** which provides:
+- Consistent navigation
+- Shared UI structure
+
+### Routing Flow
+
+```
+1. User navigates to URL
+   Example: http://localhost:5173/products
+   ↓
+
+2. BrowserRouter matches route
+   Match: /products
+   ↓
+
+3. Renders MainLayout
+   <MainLayout />
+   ├── Navigation bar (always visible)
+   └── <Outlet /> (placeholder for child route)
+   ↓
+
+4. Renders matched page component
+   <ProductsPage /> rendered in <Outlet />
+   ↓
+
+5. Page renders content
+   Product management UI displayed
+```
+
+### Navigation Flow
+
+```
+User clicks "Order Management" link
+   ↓
+React Router intercepts click
+   ↓
+Updates URL to /orders (no page reload)
+   ↓
+MainLayout stays mounted (navigation persists)
+   ↓
+<Outlet /> content changes
+   ↓
+OrdersPage replaces ProductsPage
+   ↓
+Smooth transition (no full page reload)
+```
+
+### API Service Layer
+
+**Purpose:** Centralize all API communication
+
+**Structure:**
+```javascript
+// Generic request handler
+apiRequest(endpoint, options)
+
+// Product API methods
+productApi.getAll()
+productApi.getById(id)
+productApi.create(data)
+productApi.update(id, data)
+productApi.delete(id)
+
+// Order API methods
+orderApi.getAll()
+orderApi.getById(id)
+orderApi.create(data)
+orderApi.update(id, data)
+orderApi.delete(id)
+```
+
+**Usage in Components:**
+```javascript
+import { productApi } from '../services/api';
+
+// In component
+const products = await productApi.getAll();
 ```
 
 ### State Management
-- Start with React useState/useEffect
-- Consider Zustand or Redux if complexity grows
+- **Current:** React useState/useEffect
+- **Future:** Consider Zustand or Redux if complexity grows
+
+### Design Principles
+
+1. **Separation of Concerns**
+   - Pages: Route-level components
+   - Layouts: UI structure
+   - Components: Reusable UI
+   - Services: API calls
+   - Hooks: Reusable logic
+   - Utils: Pure functions
+
+2. **Single Responsibility**
+   - Each folder has one clear purpose
+   - Easy to locate code
+   - Easy to maintain
+
+3. **Scalability**
+   - Clear structure for adding features
+   - Reusable components and hooks
+   - Centralized API layer
+
+4. **Consistency**
+   - All API calls go through services
+   - All routes use same layout
+   - All pages follow same pattern
 
 ---
 

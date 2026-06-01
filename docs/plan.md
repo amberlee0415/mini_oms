@@ -52,6 +52,15 @@ Mini OMS (Order Management System) - A modern monorepo application for managing 
   - Consistent response format (status, data/message)
 
 ### Frontend Tasks
+- [x] **Frontend Architecture Setup** - Implemented folder structure and routing:
+  - Folder structure: pages/, components/, hooks/, services/, layouts/, utils/
+  - React Router v7 configured with BrowserRouter
+  - MainLayout with navigation (Product Management, Order Management)
+  - ProductsPage placeholder (/products route)
+  - OrdersPage placeholder (/orders route)
+  - API service layer (api.js with productApi and orderApi methods)
+  - Root route (/) redirects to /products
+  - Clean separation: pages for routes, layouts for UI structure, services for API
 - [ ] Create Product list component
 - [ ] Create Product form component
 - [ ] Implement product CRUD operations

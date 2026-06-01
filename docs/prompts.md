@@ -342,6 +342,116 @@ Explain how request flows through the system from route → controller → servi
 
 ---
 
+## Prompt 5 - Frontend Architecture Setup
+
+### Date: 2026-06-01
+
+**Context:** Set up frontend architecture with proper folder structure, React Router, and navigation layout to prepare for implementing product and order features.
+
+**Prompt:**
+```
+Act as a Senior Full-stack Engineer.
+
+We are continuing an existing monorepo project.
+
+IMPORTANT CONTEXT:
+- docs/plan.md already exists
+- docs/design.md already exists
+- docs/prompts.md already exists
+- You MUST ONLY update these files (never create new markdown/documentation files)
+
+STRICT RULE:
+- Do NOT create any new .md files under any circumstances
+- Do NOT introduce business logic (products/orders features are NOT allowed in this step)
+- Only focus on frontend architecture setup
+
+TASK: Frontend Architecture Review & Setup
+
+Review existing React 19 + Vite frontend structure and refactor if needed.
+
+REQUIREMENTS:
+
+1. Folder Structure (must be created or validated):
+- pages
+- components
+- hooks
+- services
+- layouts
+- utils
+
+Ensure clean separation of concerns:
+- pages = route-level components only
+- components = reusable UI components only
+- hooks = reusable logic hooks only
+- services = API calls only (no UI logic)
+- layouts = shared UI structure (navbar/sidebar/layout wrapper)
+- utils = pure helper functions only
+
+2. Routing Setup:
+- Use React Router (latest stable version)
+- Create route structure for:
+  - /products → Product Management page (placeholder only)
+  - /orders → Order Management page (placeholder only)
+
+3. Navigation Layout:
+- Create a main layout with navigation menu
+- Navigation must include:
+  - Product Management
+  - Order Management
+- Layout should wrap all pages
+
+4. UI Rules:
+- No business logic implementation (no CRUD, no API calls for products/orders yet)
+- Only structure + placeholders
+- Keep UI clean and minimal using Tailwind CSS
+
+5. Code Quality:
+- Ensure reusable and scalable structure
+- Avoid logic inside pages except routing placeholders
+- Keep components modular
+
+DOCUMENTATION UPDATE REQUIREMENTS:
+
+### docs/plan.md
+- Mark frontend architecture setup as completed
+- Add step describing folder structure and routing setup
+
+### docs/design.md
+- Document frontend architecture design
+- Explain folder responsibilities (pages/components/hooks/services/layouts/utils)
+- Explain routing + layout structure
+
+### docs/prompts.md
+- Append this prompt as:
+  "Prompt 5 - Frontend Architecture Setup"
+
+FINAL RULES:
+- Do NOT create any new documentation files
+- Do NOT implement product or order features yet
+- Only set up structure, routing, and navigation layout
+- Keep frontend ready for future API integration
+
+Finally:
+Explain how routing flows through the layout and page structure.
+```
+
+**Result:** Successfully implemented frontend architecture with:
+- **Folder Structure:** pages/, layouts/, components/, hooks/, services/, utils/
+- **React Router v7:** Installed and configured with BrowserRouter
+- **Routing:**
+  - `/` → Redirects to `/products`
+  - `/products` → ProductsPage (placeholder)
+  - `/orders` → OrdersPage (placeholder)
+- **MainLayout:** Navigation bar with links to Product Management and Order Management
+- **Pages:** ProductsPage and OrdersPage with placeholder content
+- **API Service:** api.js with productApi and orderApi methods (ready for integration)
+- **Clean Separation:** Pages for routes, layouts for UI structure, services for API calls
+- **Routing Flow:** URL → BrowserRouter → MainLayout (navigation) → Outlet → Page component
+- **Navigation Flow:** Click link → React Router intercepts → Updates URL → Outlet content changes (no page reload)
+- **Updated Documentation:** plan.md (marked frontend architecture complete), design.md (added comprehensive Frontend Architecture section with folder responsibilities and routing flow), prompts.md (this entry)
+
+---
+
 ## Future Prompts
 
 Document additional prompts here as development continues. Include:
