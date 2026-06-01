@@ -267,10 +267,37 @@ src/
 
 #### 6. Database Layer (`database/`)
 **Responsibility:** Abstract data storage operations
-- **fileStorage.js:** Read/write JSON files
-- Provides `readData()` and `writeData()` methods
-- Handles file system errors
-- Future: Replace with database ORM
+- **fileStorage.js:** JSON file-based persistence with robust error handling
+
+**Core Functions:**
+- `readJson(filename)` - Read and parse JSON files safely
+- `writeJson(filename, data)` - Write data to JSON files safely
+- `readData()` / `writeData()` - Legacy aliases for backward compatibility
+
+**Error Handling Strategy:**
+- **File not found:** Returns empty array `[]` (expected for new files)
+- **Empty file:** Returns empty array `[]` with warning
+- **Invalid JSON:** Returns empty array `[]` and logs error (prevents crash)
+- **Corrupted data:** Returns empty array `[]` (graceful degradation)
+- **Write errors:** Returns `false` and logs error (non-blocking)
+
+**Safety Features:**
+- Never crashes the server on file errors
+- Always returns valid data structure (array)
+- Comprehensive logging for debugging
+- Validates data before writing
+
+**Usage Pattern:**
+```javascript
+// In services layer
+const products = await readJson('products.json');  // Always returns array
+const success = await writeJson('products.json', updatedProducts);  // Returns boolean
+```
+
+**Future Migration:**
+- Current: JSON files in `data/` directory
+- Future: Replace with database ORM (Prisma, TypeORM)
+- Interface remains the same for easy migration
 
 ### Request Flow
 

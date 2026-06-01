@@ -145,6 +145,98 @@ Explain the backend folder structure and request flow clearly.
 
 ---
 
+## Prompt 3 - JSON Storage Helper Implementation
+
+### Date: 2026-06-01
+
+**Context:** Implement robust JSON file storage helpers to safely read/write products.json and orders.json without crashing the server on file errors or corruption.
+
+**Prompt:**
+```
+Act as a Senior Full-stack Engineer.
+
+We are continuing an existing monorepo project.
+
+IMPORTANT CONTEXT:
+- docs/plan.md already exists
+- docs/design.md already exists
+- docs/prompts.md already exists
+- You MUST ONLY update these files (never create new markdown/documentation files)
+
+STRICT RULE:
+- Do NOT create any new .md files under any circumstances
+- Do NOT introduce new architecture layers beyond backend structure already defined
+- Only implement backend utility code changes required for this task
+
+TASK: Implement JSON Storage Helper (Backend Utility Layer)
+
+Create reusable JSON file storage helper functions for the backend:
+
+FUNCTIONS:
+- readJson(filePath)
+- writeJson(filePath, data)
+
+REQUIREMENTS:
+
+1. Robust File Handling:
+   - If file does not exist → return empty array or default value safely
+   - If file is empty → return empty array safely
+   - If file contains invalid JSON → handle gracefully (do not crash server)
+
+2. Reusability:
+   - Must work for both products.json and orders.json
+   - Must not contain any business logic (NO product/order rules)
+
+3. Safety:
+   - Prevent server crash under any file corruption scenario
+   - Use proper try-catch handling
+
+4. Maintainability:
+   - Clean, readable code
+   - Add comments explaining logic
+   - Use synchronous or async approach consistently (choose best practice and stick to it)
+
+5. File Location:
+   - Store helpers under backend/utils or backend/database (based on existing structure only)
+
+DOCUMENTATION UPDATE REQUIREMENTS:
+
+### docs/plan.md
+- Mark JSON storage helper implementation as completed
+- Add this as a new step in backend development progress
+
+### docs/design.md
+- Document JSON file-based persistence strategy
+- Explain how read/write helpers abstract file system access
+- Mention how this supports products and orders modules
+
+### docs/prompts.md
+- Append this prompt as:
+  "Prompt 3 - JSON Storage Helper Implementation"
+
+FINAL RULES:
+- Do NOT create any new documentation files
+- Do NOT introduce unnecessary new folders
+- Only implement the required helper functions
+- Ensure backend remains clean and minimal
+
+Finally:
+Explain how the JSON helper works and how it will be used by future modules (products and orders).
+```
+
+**Result:** Successfully enhanced database/fileStorage.js with:
+- `readJson(filename)` - Robust JSON reader with comprehensive error handling
+- `writeJson(filename, data)` - Safe JSON writer with validation
+- Handles 5 error scenarios: file not found, empty file, invalid JSON, corrupted data, write errors
+- Never crashes server - always returns safe defaults (empty array or false)
+- Comprehensive logging with `[fileStorage]` prefix for debugging
+- Validates array structure and data serializability
+- Legacy aliases (`readData`, `writeData`) for backward compatibility
+- Ready for products and orders CRUD operations
+- Updated all 3 documentation files
+
+---
+
 ## Future Prompts
 
 Document additional prompts here as development continues. Include:

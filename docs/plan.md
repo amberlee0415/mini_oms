@@ -24,6 +24,12 @@ Mini OMS (Order Management System) - A modern monorepo application for managing 
   - Utils (asyncHandler, AppError)
   - Database helpers (fileStorage.js)
   - Health check endpoint: GET /api/health
+- [x] **JSON Storage Helper Implementation** - Enhanced database layer with:
+  - `readJson(filename)` - Robust JSON file reader with error handling
+  - `writeJson(filename, data)` - Safe JSON file writer
+  - Handles file not found, empty files, and corrupted JSON gracefully
+  - Prevents server crashes from file system errors
+  - Ready for products.json and orders.json operations
 
 ---
 
