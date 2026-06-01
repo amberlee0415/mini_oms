@@ -114,6 +114,14 @@ Mini OMS (Order Management System) - A modern monorepo application for managing 
   - Clean component separation and immutable state updates
 - [ ] Create Order list/history view
 - [ ] Implement order update/delete operations
+- [x] **Order Calculation Refactor** - Centralized calculation logic:
+  - Created shared utility: `orderCalculations.js` (backend and frontend)
+  - Functions: `calculateSubtotal(unitPrice, quantity)`, `calculateOrderTotal(orderItems)`
+  - Refactored backend service to use shared utilities
+  - Refactored frontend OrderGrid to use shared utilities
+  - Eliminated all duplicated calculation logic
+  - Ensures consistency between frontend and backend
+  - Same formulas: subtotal = unitPrice × quantity, total = sum of subtotals
 
 ---
 

@@ -1,5 +1,6 @@
 import { readJson, writeJson } from '../database/fileStorage.js';
 import { AppError } from '../utils/AppError.js';
+import { calculateSubtotal, calculateOrderTotal } from '../utils/orderCalculations.js';
 import { randomUUID } from 'crypto';
 
 const ORDERS_FILE = 'orders.json';
@@ -69,22 +70,13 @@ const validateAndEnrichOrderItems = async (orderItems) => {
       productName: product.name,  // From product data, not frontend
       unitPrice: product.price,   // From product data, not frontend
       quantity: item.quantity,
-      subtotal: product.price * item.quantity  // Calculate on backend
+      subtotal: calculateSubtotal(product.price, item.quantity)  // Use shared utility
     };
 
     enrichedItems.push(enrichedItem);
   }
 
   return enrichedItems;
-};
-
-/**
- * Calculate total amount from order items
- * @param {Array} orderItems - Array of enriched order items
- * @returns {number} Total amount
- */
-const calculateTotalAmount = (orderItems) => {
-  return orderItems.reduce((total, item) => total + item.subtotal, 0);
 };
 
 /**
@@ -102,8 +94,8 @@ export const createOrder = async (orderData) => {
   // Validate and enrich order items (includes product lookup and price enforcement)
   const enrichedItems = await validateAndEnrichOrderItems(orderData.orderItems);
 
-  // Calculate total amount on backend
-  const totalAmount = calculateTotalAmount(enrichedItems);
+  // Calculate total amount on backend using shared utility
+  const totalAmount = calculateOrderTotal(enrichedItems);
 
   // Read existing orders
   const orders = await readJson(ORDERS_FILE);
@@ -162,7 +154,7 @@ export const updateOrder = async (id, updates) => {
 
   if (updates.orderItems) {
     enrichedItems = await validateAndEnrichOrderItems(updates.orderItems);
-    totalAmount = calculateTotalAmount(enrichedItems);
+    totalAmount = calculateOrderTotal(enrichedItems);  // Use shared utility
   }
 
   // Update order

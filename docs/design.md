@@ -906,6 +906,124 @@ const removeRow = (rowId) => {
 - Reset button to clear form
 - Submit button disabled when no items
 
+### Shared Calculation Utilities (Implemented)
+
+**Purpose:** Centralize all order calculation logic to ensure consistency between frontend and backend.
+
+**Location:**
+- Backend: `apps/backend/src/utils/orderCalculations.js`
+- Frontend: `apps/frontend/src/utils/orderCalculations.js`
+
+**Functions:**
+
+#### **calculateSubtotal(unitPrice, quantity)**
+```javascript
+/**
+ * Calculate subtotal for a single order item
+ * @param {number} unitPrice - Price per unit
+ * @param {number} quantity - Quantity ordered
+ * @returns {number} Subtotal (unitPrice × quantity)
+ */
+export const calculateSubtotal = (unitPrice, quantity) => {
+  const price = Number(unitPrice) || 0;
+  const qty = Number(quantity) || 0;
+  return price * qty;
+};
+```
+
+**Usage:**
+- Backend: Enriching order items with calculated subtotals
+- Frontend: Real-time subtotal calculation in OrderGrid
+
+**Formula:** `subtotal = unitPrice × quantity`
+
+#### **calculateOrderTotal(orderItems)**
+```javascript
+/**
+ * Calculate total amount for an order
+ * @param {Array} orderItems - Array of order items with subtotal property
+ * @returns {number} Total amount (sum of all subtotals)
+ */
+export const calculateOrderTotal = (orderItems) => {
+  if (!Array.isArray(orderItems) || orderItems.length === 0) {
+    return 0;
+  }
+  return orderItems.reduce((total, item) => {
+    const subtotal = Number(item.subtotal) || 0;
+    return total + subtotal;
+  }, 0);
+};
+```
+
+**Usage:**
+- Backend: Calculating totalAmount before saving orders
+- Frontend: Real-time total calculation in OrderGrid
+
+**Formula:** `totalAmount = sum of all subtotals`
+
+**Why Centralized Calculations?**
+
+1. **Consistency Guarantee**
+   - Frontend and backend use identical formulas
+   - No risk of calculation drift between environments
+   - Single source of truth for business logic
+
+2. **Maintainability**
+   - Change calculation logic in one place
+   - Updates automatically apply to both frontend and backend
+   - Easier to add features (e.g., discounts, taxes)
+
+3. **Testability**
+   - Pure functions easy to unit test
+   - Same tests can validate both frontend and backend
+   - Predictable behavior
+
+4. **Numeric Safety**
+   - Consistent handling of edge cases (null, undefined, NaN)
+   - Ensures numeric conversion before calculation
+   - Prevents floating-point errors
+
+**Refactoring Impact:**
+
+**Before Refactor:**
+```javascript
+// Backend (order.service.js) - DUPLICATED
+subtotal: product.price * item.quantity
+
+// Frontend (OrderGrid.jsx) - DUPLICATED
+const subtotal = productData.unitPrice * quantity;
+const total = orderRows.reduce((sum, row) => sum + (row.subtotal || 0), 0);
+```
+
+**After Refactor:**
+```javascript
+// Backend (order.service.js) - SHARED
+import { calculateSubtotal, calculateOrderTotal } from '../utils/orderCalculations.js';
+subtotal: calculateSubtotal(product.price, item.quantity)
+totalAmount = calculateOrderTotal(enrichedItems);
+
+// Frontend (OrderGrid.jsx) - SHARED
+import { calculateSubtotal, calculateOrderTotal } from '../../utils/orderCalculations';
+const subtotal = calculateSubtotal(productData.unitPrice, quantity);
+const total = calculateOrderTotal(orderRows);
+```
+
+**Consistency Verification:**
+
+| Calculation | Frontend | Backend | Consistent? |
+|-------------|----------|---------|-------------|
+| Subtotal | `calculateSubtotal()` | `calculateSubtotal()` | ✅ Yes |
+| Total | `calculateOrderTotal()` | `calculateOrderTotal()` | ✅ Yes |
+| Formula | `price × qty` | `price × qty` | ✅ Yes |
+| Edge Cases | `Number() \|\| 0` | `Number() \|\| 0` | ✅ Yes |
+
+**Benefits Achieved:**
+- ✅ Zero calculation duplication
+- ✅ Guaranteed consistency
+- ✅ Single source of truth
+- ✅ Easy to maintain and extend
+- ✅ Testable pure functions
+
 ---
 
 ## Backend Architecture

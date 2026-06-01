@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { calculateSubtotal, calculateOrderTotal } from '../../utils/orderCalculations';
 import OrderRow from './OrderRow';
 import OrderSummary from './OrderSummary';
 
@@ -6,7 +7,7 @@ function OrderGrid({ products, orderRows, setOrderRows }) {
   const [totalAmount, setTotalAmount] = useState(0);
 
   useEffect(() => {
-    const total = orderRows.reduce((sum, row) => sum + (row.subtotal || 0), 0);
+    const total = calculateOrderTotal(orderRows);  // Use shared utility
     setTotalAmount(total);
   }, [orderRows]);
 
@@ -30,7 +31,7 @@ function OrderGrid({ products, orderRows, setOrderRows }) {
     setOrderRows(orderRows.map(row => {
       if (row.id === rowId) {
         const quantity = row.quantity || 0;
-        const subtotal = productData.unitPrice * quantity;
+        const subtotal = calculateSubtotal(productData.unitPrice, quantity);  // Use shared utility
         return {
           ...row,
           productId: productData.productId,
@@ -46,7 +47,7 @@ function OrderGrid({ products, orderRows, setOrderRows }) {
   const handleQuantityChange = (rowId, quantity) => {
     setOrderRows(orderRows.map(row => {
       if (row.id === rowId) {
-        const subtotal = (row.unitPrice || 0) * quantity;
+        const subtotal = calculateSubtotal(row.unitPrice, quantity);  // Use shared utility
         return {
           ...row,
           quantity: quantity,

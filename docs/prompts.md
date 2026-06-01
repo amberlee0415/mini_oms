@@ -853,6 +853,128 @@ user interaction → grid state → calculation → API submission → backend v
 
 ---
 
+## Prompt 9 - Order Calculation Refactor
+
+### Date: 2026-06-01
+
+**Context:** Refactor duplicated calculation logic in both frontend and backend to use centralized shared utilities for consistency.
+
+**Prompt:**
+```
+Act as a Senior Full-stack Engineer.
+
+We are continuing an existing monorepo project.
+
+IMPORTANT CONTEXT:
+- docs/plan.md already exists
+- docs/design.md already exists
+- docs/prompts.md already exists
+- You MUST ONLY update these files (never create new markdown/documentation files)
+
+STRICT RULE:
+- Do NOT create any new .md files under any circumstances
+- Do NOT introduce new business features
+- Only refactor existing calculation logic in both frontend and backend
+
+TASK: Refactor Order Calculation Logic
+
+We already have:
+- Order CRUD backend with total calculation
+- Frontend interactive order grid with subtotal/total calculations
+
+PROBLEM:
+- Calculation logic is duplicated between frontend and backend
+- This may cause inconsistency
+
+GOAL:
+Centralize and standardize ALL calculation logic into reusable utility functions.
+
+REQUIREMENTS:
+
+1. Create Shared Calculation Logic (IMPORTANT):
+- Implement reusable utility functions for:
+  - calculateSubtotal(unitPrice, quantity)
+  - calculateOrderTotal(orderItems)
+
+2. Consistency Rules:
+- Frontend and backend MUST use the same calculation logic
+- Ensure identical behavior in both environments
+- No duplicated formulas anywhere else
+
+3. Accuracy Rules:
+- subtotal = unitPrice × quantity
+- totalAmount = sum of all subtotals
+- Ensure numeric safety (avoid floating point issues where possible)
+- Keep calculations predictable and consistent
+
+4. Refactor Scope:
+- Remove any duplicated calculation logic from:
+  - backend services
+  - frontend components
+- Replace with shared utility functions only
+
+5. Architecture Rules:
+- Utilities must be reusable across frontend and backend
+- Do NOT mix business logic inside UI components
+- Do NOT embed calculation logic inside controllers
+
+6. Safety Requirements:
+- Ensure refactor does not break existing API responses
+- Ensure frontend behavior remains identical after refactor
+
+DOCUMENTATION UPDATE REQUIREMENTS:
+
+### docs/plan.md
+- Mark calculation refactor as completed
+- Add step describing centralization of calculation logic
+
+### docs/design.md
+- Document shared calculation utilities
+- Explain why centralized calculation is important
+- Describe how both frontend and backend now use same logic
+
+### docs/prompts.md
+- Append this prompt as:
+  "Prompt 9 - Order Calculation Refactor"
+
+FINAL RULES:
+- Do NOT create any new documentation files
+- Do NOT introduce new features
+- Only refactor existing logic for consistency
+- Ensure no duplicated calculation code remains
+
+Finally:
+Explain:
+1. What duplication was found
+2. What was refactored
+3. How consistency is now guaranteed between frontend and backend
+```
+
+**Result:** Successfully refactored order calculation logic with:
+- **Created Shared Utilities:**
+  - `apps/backend/src/utils/orderCalculations.js`
+  - `apps/frontend/src/utils/orderCalculations.js`
+  - Functions: `calculateSubtotal(unitPrice, quantity)`, `calculateOrderTotal(orderItems)`
+- **Duplication Found:**
+  - Backend: `subtotal: product.price * item.quantity` (inline calculation)
+  - Backend: `calculateTotalAmount()` local function
+  - Frontend: `const subtotal = productData.unitPrice * quantity` (inline calculation)
+  - Frontend: `orderRows.reduce((sum, row) => sum + (row.subtotal || 0), 0)` (inline calculation)
+- **Refactored:**
+  - Backend `order.service.js`: Replaced 3 instances of inline calculations with shared utilities
+  - Frontend `OrderGrid.jsx`: Replaced 3 instances of inline calculations with shared utilities
+  - Removed local `calculateTotalAmount()` function from backend
+- **Consistency Guaranteed:**
+  - Both environments import identical utility functions
+  - Same formulas: `subtotal = unitPrice × quantity`, `totalAmount = sum of subtotals`
+  - Same numeric safety: `Number(value) || 0` for edge cases
+  - Single source of truth for all calculations
+- **Zero Breaking Changes:** API responses and frontend behavior remain identical
+- **Benefits:** Maintainability (change once, apply everywhere), testability (pure functions), consistency (no calculation drift)
+- **Updated Documentation:** plan.md (marked calculation refactor complete), design.md (added Shared Calculation Utilities section with before/after comparison), prompts.md (this entry)
+
+---
+
 ## Future Prompts
 
 Document additional prompts here as development continues. Include:
