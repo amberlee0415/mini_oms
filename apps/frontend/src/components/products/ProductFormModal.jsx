@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-function ProductFormModal({ isOpen, onClose, onSubmit, product, loading }) {
+function ProductFormModal({ isOpen, onClose, onSubmit, product, loading, error }) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -85,6 +85,17 @@ function ProductFormModal({ isOpen, onClose, onSubmit, product, loading }) {
         </div>
 
         <form onSubmit={handleSubmit} className="px-6 py-6">
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-400 rounded-r-lg">
+              <div className="flex items-start">
+                <svg className="w-5 h-5 text-red-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                </svg>
+                <p className="ml-3 text-sm font-medium text-red-800">{error}</p>
+              </div>
+            </div>
+          )}
+          
           <div className="space-y-5">
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">

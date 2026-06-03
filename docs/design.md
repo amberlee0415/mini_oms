@@ -1465,6 +1465,234 @@ className="text-red-600 hover:text-red-900 transition-colors
 | Visual Hierarchy | Flat design | Clear spacing and typography scale | ✅ Improved |
 | Responsiveness | Desktop-only | Works on all screen sizes | ✅ Mobile-friendly |
 
+### Comprehensive Error Handling Strategy (Implemented)
+
+**Purpose:** Ensure application reliability, prevent crashes, and provide clear user feedback for all error scenarios.
+
+#### **Backend Error Handling**
+
+**Error Handler Middleware:**
+```javascript
+export const errorHandler = (err, req, res, next) => {
+  console.error('Error:', err);
+
+  const statusCode = err.statusCode || 500;
+  const message = err.message || 'Internal Server Error';
+
+  res.status(statusCode).json({
+    status: 'error',
+    statusCode,
+    message,
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+  });
+};
+```
+
+**AppError Class:**
+- Custom error class with statusCode
+- Used throughout services for validation errors
+- Provides consistent error responses
+
+**Controller Pattern:**
+```javascript
+export const createProduct = async (req, res, next) => {
+  try {
+    const productData = req.body;
+    const newProduct = await productService.createProduct(productData);
+    res.status(201).json({
+      status: 'success',
+      data: newProduct
+    });
+  } catch (error) {
+    next(error); // Passes to error handler middleware
+  }
+};
+```
+
+**Service Layer Validation:**
+- Comprehensive input validation
+- Throws AppError with appropriate status codes
+- Handles NaN, Infinity, null, undefined, type checking
+- Validates business rules (e.g., product exists before order creation)
+
+**JSON Storage Error Handling:**
+```javascript
+export const readJson = async (filename) => {
+  try {
+    const fileContent = await readFile(filePath, 'utf-8');
+    
+    if (!fileContent || fileContent.trim() === '') {
+      console.warn(`File ${filename} is empty, returning empty array`);
+      return [];
+    }
+    
+    try {
+      const parsedData = JSON.parse(fileContent);
+      if (!Array.isArray(parsedData)) {
+        console.warn(`File ${filename} does not contain an array`);
+        return [];
+      }
+      return parsedData;
+    } catch (parseError) {
+      console.error(`Invalid JSON in ${filename}:`, parseError.message);
+      return []; // Graceful degradation
+    }
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      console.info(`File ${filename} not found, returning empty array`);
+      return [];
+    }
+    console.error(`Error reading ${filename}:`, error.message);
+    return [];
+  }
+};
+```
+
+**Error Scenarios Handled:**
+- ✅ File not found (ENOENT) → Returns empty array
+- ✅ Empty files → Returns empty array
+- ✅ Corrupted JSON → Returns empty array
+- ✅ Write failures → Returns false, logs error
+- ✅ Invalid data types → Validation errors
+- ✅ Missing required fields → 400 Bad Request
+- ✅ Resource not found → 404 Not Found
+- ✅ Server errors → 500 Internal Server Error
+
+#### **Frontend Error Handling**
+
+**API Service Layer:**
+```javascript
+const apiRequest = async (endpoint, options = {}) => {
+  try {
+    const response = await fetch(url, config);
+    
+    // Check if response has content before parsing JSON
+    const contentType = response.headers.get('content-type');
+    const hasJsonContent = contentType && contentType.includes('application/json');
+    
+    let data = null;
+    if (hasJsonContent) {
+      const text = await response.text();
+      data = text ? JSON.parse(text) : null;
+    }
+
+    if (!response.ok) {
+      throw new Error(data?.message || 'API request failed');
+    }
+
+    return data;
+  } catch (error) {
+    console.error('API Error:', error);
+    throw error;
+  }
+};
+```
+
+**Fixes Applied:**
+- ✅ Content-type checking before JSON parsing
+- ✅ Read as text first, then parse if content exists
+- ✅ Handles empty responses (e.g., DELETE operations)
+- ✅ Prevents "Unexpected end of JSON input" errors
+
+**Error State Management:**
+```javascript
+// Separate error states for different operations
+const [error, setError] = useState(null);           // For fetch errors
+const [actionError, setActionError] = useState(null); // For create/update/delete errors
+const [submitError, setSubmitError] = useState(null); // For form submission errors
+```
+
+**Error Display Patterns:**
+
+**1. Page-Level Errors (Fetch Failures):**
+```jsx
+{error && (
+  <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-400 rounded-r-lg shadow-sm">
+    <div className="flex items-start">
+      <svg className="w-5 h-5 text-red-400 mt-0.5" ...>
+        {/* Error icon */}
+      </svg>
+      <div className="ml-3 flex-1">
+        <p className="text-sm font-medium text-red-800">{error}</p>
+        <button onClick={fetchProducts} className="mt-2 text-sm text-red-600 hover:text-red-800 underline font-medium">
+          Try again
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+```
+
+**2. Modal Errors (Action Failures):**
+```jsx
+{error && (
+  <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-400 rounded-r-lg">
+    <div className="flex items-start">
+      <svg className="w-5 h-5 text-red-400 mt-0.5" ...>
+        {/* Error icon */}
+      </svg>
+      <p className="ml-3 text-sm font-medium text-red-800">{error}</p>
+    </div>
+  </div>
+)}
+```
+
+**3. Success Messages:**
+```jsx
+{successMessage && (
+  <div className="mb-6 p-4 bg-green-50 border-l-4 border-green-400 rounded-r-lg shadow-sm">
+    <div className="flex items-start">
+      <svg className="w-5 h-5 text-green-400 mt-0.5" ...>
+        {/* Success icon */}
+      </svg>
+      <p className="ml-3 text-sm font-medium text-green-800">{successMessage}</p>
+    </div>
+  </div>
+)}
+```
+
+**Error Handling Flow:**
+
+```
+User Action → Frontend Validation → API Request → Backend Validation → Response
+     ↓              ↓                    ↓              ↓                ↓
+  UI State    Validation Error    Network Error   AppError 400/404   Success/Error
+     ↓              ↓                    ↓              ↓                ↓
+  Display      Show inline         Catch & display  Parse & display  Update UI
+```
+
+**Improvements Made:**
+
+| Component | Before | After | Impact |
+|-----------|--------|-------|--------|
+| **API Service** | Direct JSON parse | Content-type check + text parse | ✅ No crashes on empty responses |
+| **ProductsPage** | alert() for errors | Inline error display in modals | ✅ Better UX, non-blocking |
+| **OrdersPage** | alert() for errors | Inline error + success messages | ✅ Clear feedback, auto-dismiss |
+| **ProductFormModal** | No error display | Error banner at top of form | ✅ Contextual error feedback |
+| **ConfirmDeleteModal** | No error display | Error banner before confirmation | ✅ User can retry without closing |
+| **Error Messages** | Generic messages | Specific, actionable messages | ✅ Users know what to do |
+
+**Error Recovery:**
+- ✅ Retry buttons for fetch failures
+- ✅ Errors clear when retrying actions
+- ✅ Success messages auto-dismiss after 5 seconds
+- ✅ Modal errors don't close modal (user can fix and retry)
+- ✅ Form validation errors clear on input change
+
+**Remaining Risks:**
+- ⚠️ Network timeout not explicitly handled (browser default applies)
+- ⚠️ Concurrent modification conflicts (last write wins)
+- ⚠️ No offline detection or queuing
+
+**Best Practices Followed:**
+- ✅ Never crash the application
+- ✅ Always provide user feedback
+- ✅ Log errors for debugging
+- ✅ Graceful degradation (empty arrays for missing data)
+- ✅ Consistent error message format
+- ✅ Separate error states for different contexts
+- ✅ Clear error messages with actionable guidance
+
 ---
 
 ## Backend Architecture

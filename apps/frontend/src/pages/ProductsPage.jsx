@@ -9,6 +9,7 @@ function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [actionError, setActionError] = useState(null);
   
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -34,16 +35,19 @@ function ProductsPage() {
 
   const handleCreate = () => {
     setSelectedProduct(null);
+    setActionError(null);
     setIsFormModalOpen(true);
   };
 
   const handleEdit = (product) => {
     setSelectedProduct(product);
+    setActionError(null);
     setIsFormModalOpen(true);
   };
 
   const handleDelete = (product) => {
     setSelectedProduct(product);
+    setActionError(null);
     setIsDeleteModalOpen(true);
   };
 
@@ -55,6 +59,7 @@ function ProductsPage() {
 
     try {
       setActionLoading(true);
+      setActionError(null);
       
       if (selectedProduct) {
         await productApi.update(selectedProduct.id, formData);
@@ -66,7 +71,7 @@ function ProductsPage() {
       setSelectedProduct(null);
       await fetchProducts();
     } catch (err) {
-      alert(err.message || 'Failed to save product');
+      setActionError(err.message || 'Failed to save product. Please try again.');
       console.error('Error saving product:', err);
     } finally {
       setActionLoading(false);
@@ -81,12 +86,13 @@ function ProductsPage() {
 
     try {
       setActionLoading(true);
+      setActionError(null);
       await productApi.delete(selectedProduct.id);
       setIsDeleteModalOpen(false);
       setSelectedProduct(null);
       await fetchProducts();
     } catch (err) {
-      alert(err.message || 'Failed to delete product');
+      setActionError(err.message || 'Failed to delete product. Please try again.');
       console.error('Error deleting product:', err);
     } finally {
       setActionLoading(false);
@@ -98,6 +104,7 @@ function ProductsPage() {
       setIsFormModalOpen(false);
       setIsDeleteModalOpen(false);
       setSelectedProduct(null);
+      setActionError(null);
     }
   };
 
@@ -156,6 +163,7 @@ function ProductsPage() {
           onSubmit={handleFormSubmit}
           product={selectedProduct}
           loading={actionLoading}
+          error={actionError}
         />
 
         <ConfirmDeleteModal
@@ -164,6 +172,7 @@ function ProductsPage() {
           onConfirm={handleConfirmDelete}
           product={selectedProduct}
           loading={actionLoading}
+          error={actionError}
         />
       </div>
     </div>

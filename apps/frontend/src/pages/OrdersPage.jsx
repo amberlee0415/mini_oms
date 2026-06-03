@@ -10,6 +10,8 @@ function OrdersPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+  const [submitError, setSubmitError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
   const [validationErrors, setValidationErrors] = useState({});
 
   useEffect(() => {
@@ -67,6 +69,8 @@ function OrdersPage() {
 
     try {
       setSubmitting(true);
+      setSubmitError(null);
+      setSuccessMessage(null);
 
       const orderData = {
         customerName: customerName.trim(),
@@ -81,9 +85,12 @@ function OrdersPage() {
       setCustomerName('');
       setOrderRows([]);
       setValidationErrors({});
-      alert('Order created successfully!');
+      setSuccessMessage('Order created successfully!');
+      
+      // Clear success message after 5 seconds
+      setTimeout(() => setSuccessMessage(null), 5000);
     } catch (err) {
-      alert(err.message || 'Failed to create order');
+      setSubmitError(err.message || 'Failed to create order. Please try again.');
       console.error('Error creating order:', err);
     } finally {
       setSubmitting(false);
@@ -94,6 +101,8 @@ function OrdersPage() {
     setCustomerName('');
     setOrderRows([]);
     setValidationErrors({});
+    setSubmitError(null);
+    setSuccessMessage(null);
   };
 
   if (loading) {
@@ -143,6 +152,28 @@ function OrdersPage() {
             Create new orders with interactive order entry
           </p>
         </div>
+
+        {successMessage && (
+          <div className="mb-6 p-4 bg-green-50 border-l-4 border-green-400 rounded-r-lg shadow-sm">
+            <div className="flex items-start">
+              <svg className="w-5 h-5 text-green-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+              </svg>
+              <p className="ml-3 text-sm font-medium text-green-800">{successMessage}</p>
+            </div>
+          </div>
+        )}
+
+        {submitError && (
+          <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-400 rounded-r-lg shadow-sm">
+            <div className="flex items-start">
+              <svg className="w-5 h-5 text-red-400 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+              <p className="ml-3 text-sm font-medium text-red-800">{submitError}</p>
+            </div>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="bg-white p-6 sm:p-8 rounded-lg border border-gray-200 shadow-sm">

@@ -19,10 +19,19 @@ const apiRequest = async (endpoint, options = {}) => {
 
   try {
     const response = await fetch(url, config);
-    const data = await response.json();
+    
+    // Check if response has content before parsing JSON
+    const contentType = response.headers.get('content-type');
+    const hasJsonContent = contentType && contentType.includes('application/json');
+    
+    let data = null;
+    if (hasJsonContent) {
+      const text = await response.text();
+      data = text ? JSON.parse(text) : null;
+    }
 
     if (!response.ok) {
-      throw new Error(data.message || 'API request failed');
+      throw new Error(data?.message || 'API request failed');
     }
 
     return data;
